@@ -766,4 +766,5 @@ Format: 2 haftalik sprintlar. Ishchi kuchi: 1 dasturchi + Claude. Har bir sprint
 5. ✅ Roadmap: MVP / v2 / v3
 6. ✅ Wireframe'lar + bosiladigan prototip
 7. ✅ Bosqich 0 — monorepo, Docker, Prisma sxemasi, CI
-8. 🔄 MVP S1 — ✅ Telegram orqali kirish, sessiyalar · ⏳ rol tanlash, PWA'da token saqlash
+8. ✅ MVP S1 — Telegram orqali kirish, sessiyalar, rol tanlash, sessiyani tiklash
+9. MVP S3 — yosh va oila profillari (5A/5B)

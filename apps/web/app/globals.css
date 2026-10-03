@@ -24,3 +24,13 @@ h1 { font-size: 32px; line-height: 1.1; margin: 24px 0 0; text-wrap: balance; }
        background: var(--accent); color: var(--accent-ink); text-decoration: none; cursor: pointer; }
 .btn.sec { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn.small { flex: none; padding: 7px 12px; font-size: 14px; }
+.choices { display: flex; flex-direction: column; gap: 10px; }
+.choice { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 14px;
+          border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.choice b { font-size: 18px; }
+.choice span { color: var(--muted); font-size: 14px; }
+.choice[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.panel { border: 1px solid var(--line); border-radius: 14px; padding: 4px 16px; background: var(--surface); }
+.error { color: #c0392b; }

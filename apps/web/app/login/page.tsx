@@ -1,26 +1,29 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { nextPathFor, useAuth, type SessionUser } from "@/lib/auth";
 
 type Start = { loginId: string; pollToken: string; deepLink: string; expiresAt: string };
-type Poll =
-  | { status: "PENDING" | "EXPIRED" }
-  | { status: "OK"; accessToken: string; user: { id: string; role: string | null; status: string } };
-type Me = { phone: string; role: string | null; status: string };
+type Poll = { status: "PENDING" | "EXPIRED" } | { status: "OK"; accessToken: string; user: SessionUser };
 
-type View =
-  | { kind: "loading" }
-  | { kind: "ready"; start: Start }
-  | { kind: "done"; me: Me }
-  | { kind: "error"; message: string };
+type View = { kind: "loading" } | { kind: "ready"; start: Start } | { kind: "error"; message: string };
 
 const POLL_MS = 2000;
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { state, setSession } = useAuth();
   const [view, setView] = useState<View>({ kind: "loading" });
   const [opened, setOpened] = useState(false);
   const startRef = useRef<Start | null>(null);
+  const startedRef = useRef(false);
+
+  // Allaqachon kirgan bo'lsa — kerakli sahifaga
+  useEffect(() => {
+    if (state.status === "authed") router.replace(nextPathFor(state.user));
+  }, [state, router]);
 
   const begin = useCallback(async () => {
     setView({ kind: "loading" });
@@ -37,12 +40,14 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Kirish so'rovi faqat sessiya yo'qligi aniq bo'lgandan keyin va bir marta yaratiladi
   useEffect(() => {
+    if (state.status !== "anon" || startedRef.current) return;
+    startedRef.current = true;
     void begin();
-  }, [begin]);
+  }, [state.status, begin]);
 
-  // Telegram'da tasdiqlanishini kutish. iOS'da foydalanuvchi Telegram'dan qaytganda sahifa
-  // qayta faollashadi — interval o'sha paytda ham ishlashda davom etadi.
+  // Telegram'da tasdiqlanishini kutish (foydalanuvchi Telegram'dan qaytganda ham davom etadi)
   useEffect(() => {
     if (view.kind !== "ready") return;
     let stopped = false;
@@ -57,8 +62,8 @@ export default function LoginPage() {
       if (r.body?.status === "EXPIRED") return void begin();
       if (r.body?.status === "OK") {
         stopped = true;
-        const me = await apiFetch<Me>("/me", { token: r.body.accessToken });
-        setView({ kind: "done", me: me.body });
+        setSession(r.body.accessToken, r.body.user);
+        router.replace(nextPathFor(r.body.user));
       }
     };
     const id = setInterval(() => void tick(), POLL_MS);
@@ -68,39 +73,30 @@ export default function LoginPage() {
       clearInterval(id);
       document.removeEventListener("visibilitychange", tick);
     };
-  }, [view.kind, begin]);
+  }, [view.kind, begin, setSession, router]);
 
   return (
     <main className="wrap">
       <a href="/" className="hint">← Bosh sahifa</a>
       <h1>Kirish</h1>
 
-      {view.kind === "loading" && <p className="lead">Tayyorlanmoqda…</p>}
+      {(view.kind === "loading" || state.status !== "anon") && <p className="lead">Tayyorlanmoqda…</p>}
 
-      {view.kind === "ready" && (
+      {view.kind === "ready" && state.status === "anon" && (
         <>
           <p className="lead">
-            Kirish va ro'yxatdan o'tish Telegram orqali. Raqamingiz Telegram tomonidan tasdiqlanadi — SMS kerak emas.
+            Kirish va ro'yxatdan o'tish Telegram orqali. Raqamingizni Telegram tasdiqlaydi, SMS kerak emas.
           </p>
           <a className="btn" href={view.start.deepLink} target="_blank" rel="noopener" onClick={() => setOpened(true)}>
             ✈ Telegram orqali kirish
           </a>
           {opened && (
             <p className="hint">
-              Telegram'da <b>Start</b> tugmasini bosing. Birinchi marta bo'lsa, raqamingizni yuborish so'raladi. Keyin shu sahifaga
-              qayting — kirish avtomatik davom etadi.
+              Telegram'da <b>Start</b> tugmasini bosing. Birinchi marta kirayotgan bo'lsangiz, raqamingizni yuborish so'raladi.
+              Keyin shu sahifaga qayting, kirish o'zi davom etadi.
             </p>
           )}
         </>
-      )}
-
-      {view.kind === "done" && (
-        <div className="lead">
-          <p>✅ Kirdingiz: {view.me.phone}</p>
-          <p className="hint">
-            Holat: {view.me.status} · Rol: {view.me.role ?? "hali tanlanmagan"}
-          </p>
-        </div>
       )}
 
       {view.kind === "error" && (

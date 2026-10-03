@@ -63,4 +63,4 @@ pnpm turbo run build typecheck test
 ```
 
 ## Holat
-TZ v1.3 · Bosqich 0 ✅ · MVP S1: Telegram orqali kirish ✅ (e2e testlar bilan). Keyingi: rol tanlash, PWA'da sessiyani saqlash.
+TZ v1.3 · Bosqich 0 ✅ · MVP S1 ✅: Telegram orqali kirish, sessiyalar, rol tanlash (30 e2e test). Keyingi: profillar.

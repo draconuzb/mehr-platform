@@ -7,6 +7,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { randomToken, sha256 } from "./tokens";
 
 const BLOCKED_STATUSES = new Set(["BANNED", "DELETED"]);
+/** Rotatsiyadan keyin shu muddat ichida eski token kelsa — bu parallel so'rov (ikki tab), o'g'irlik emas */
+export const REFRESH_REUSE_GRACE_MS = 10_000;
 
 @Injectable()
 export class SessionService {
@@ -44,7 +46,8 @@ export class SessionService {
 
     if (!session) {
       const reused = await this.prisma.session.findFirst({ where: { prevRefreshTokenHash: hash } });
-      if (reused) {
+      const withinGrace = reused && !reused.revokedAt && Date.now() - reused.lastUsedAt.getTime() < REFRESH_REUSE_GRACE_MS;
+      if (reused && !withinGrace) {
         await this.revokeAllForUser(reused.userId, "REFRESH_TOKEN_REUSE");
         await this.audit.log({
           actorId: reused.userId,

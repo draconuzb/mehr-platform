@@ -173,7 +173,8 @@ describe("Sessiyalar", () => {
     const cookie2 = refreshCookie(r1.headers);
     expect(cookie2).not.toBe(cookie1);
 
-    // Hujumchi eski tokenni ishlatadi
+    // Hujumchi eski tokenni grace oynasidan keyin ishlatadi
+    await prisma.session.updateMany({ data: { lastUsedAt: new Date(Date.now() - 60_000) } });
     expect((await api("/auth/refresh", { method: "POST", headers: { cookie: cookie1 } })).status).toBe(401);
 
     // Endi haqiqiy egasining tokeni ham, access token ham yaroqsiz
@@ -183,6 +184,18 @@ describe("Sessiyalar", () => {
     const sessions = await prisma.session.findMany();
     expect(sessions.every((s) => s.revokeReason === "REFRESH_TOKEN_REUSE")).toBe(true);
     expect((await prisma.auditLog.findMany()).map((a) => a.action)).toContain("auth.refresh.reuse_detected");
+  });
+
+  it("parallel refresh (ikki tab) grace oynasida sessiyalarni bekor qilmaydi", async () => {
+    const { poll } = await login("555012", "+998901113322");
+    const cookie1 = refreshCookie(poll.headers);
+    const r1 = await api("/auth/refresh", { method: "POST", headers: { cookie: cookie1 } });
+    const cookie2 = refreshCookie(r1.headers);
+
+    // Ikkinchi tab hali eski cookie bilan so'rov yuboradi — rad etiladi, lekin hech narsa bekor qilinmaydi
+    expect((await api("/auth/refresh", { method: "POST", headers: { cookie: cookie1 } })).status).toBe(401);
+    expect((await api("/auth/refresh", { method: "POST", headers: { cookie: cookie2 } })).status).toBe(200);
+    expect(await prisma.session.count({ where: { revokedAt: { not: null } } })).toBe(0);
   });
 
   it("logout'dan keyin access va refresh token ishlamaydi", async () => {
@@ -197,6 +210,51 @@ describe("Sessiyalar", () => {
     expect((await api("/me")).status).toBe(401);
     expect((await api("/me", { headers: { authorization: "Bearer abc.def.ghi" } })).status).toBe(401);
     expect((await api("/auth/refresh", { method: "POST" })).status).toBe(401);
+  });
+});
+
+describe("Rol tanlash", () => {
+  it("rol bir marta tanlanadi va yangi token rolni o'z ichiga oladi", async () => {
+    const { poll } = await login("555020", "+998901114400");
+    const auth = { authorization: `Bearer ${poll.body.accessToken}` };
+
+    const r = await api("/me/role", { method: "POST", headers: auth, json: { role: "YOUTH" } });
+    expect(r.status).toBe(200);
+    expect(r.body.user.role).toBe("YOUTH");
+    expect(r.body.me.onboarding.roleChosen).toBe(true);
+
+    const payload = JSON.parse(Buffer.from(r.body.accessToken.split(".")[1], "base64url").toString());
+    expect(payload.role).toBe("YOUTH");
+
+    const again = await api("/me/role", { method: "POST", headers: auth, json: { role: "FAMILY_ADULT" } });
+    expect(again.status).toBe(409);
+    expect((await prisma.user.findFirstOrThrow()).role).toBe("YOUTH");
+    expect((await prisma.auditLog.findMany()).map((a) => a.action)).toContain("user.role.set");
+  });
+
+  it("xodim rolini o'zi tanlay olmaydi", async () => {
+    const { poll } = await login("555021", "+998901114411");
+    const auth = { authorization: `Bearer ${poll.body.accessToken}` };
+    for (const role of ["ADMIN", "COORDINATOR", "MODERATOR", "GUARDIAN"]) {
+      expect((await api("/me/role", { method: "POST", headers: auth, json: { role } })).status).toBe(400);
+    }
+    expect((await prisma.user.findFirstOrThrow()).role).toBeNull();
+  });
+
+  it("parallel so'rovlardan faqat bittasi rolni o'rnatadi", async () => {
+    const { poll } = await login("555022", "+998901114422");
+    const auth = { authorization: `Bearer ${poll.body.accessToken}` };
+    const results = await Promise.all(
+      (["YOUTH", "FAMILY_ADULT", "YOUTH", "FAMILY_ADULT"] as const).map((role) =>
+        api("/me/role", { method: "POST", headers: auth, json: { role } }),
+      ),
+    );
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 409)).toHaveLength(3);
+  });
+
+  it("tokensiz rad etiladi", async () => {
+    expect((await api("/me/role", { method: "POST", json: { role: "YOUTH" } })).status).toBe(401);
   });
 });
 
