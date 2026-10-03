@@ -42,7 +42,7 @@ export default function RolePage() {
     setSaving(false);
     if (r.status === 200) {
       setSession(r.body.accessToken, r.body.user);
-      router.replace("/app");
+      router.replace("/onboarding");
     } else if (r.status === 409) {
       // Boshqa tabda allaqachon tanlangan — yangi rol bilan token olib davom etamiz
       await refresh();
