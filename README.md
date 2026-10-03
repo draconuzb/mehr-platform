@@ -35,7 +35,7 @@ Talablar: Node 22 (`nvm use`), pnpm 9 (`corepack enable`), Docker.
 pnpm install
 cp .env.example .env            # birinchi marta
 pnpm infra:up                   # Postgres + Redis + SeaweedFS (S3)
-pnpm db:migrate                 # migratsiyalar (birinchi marta: nom so'raydi, masalan "init")
+pnpm db:migrate                 # migratsiyalar (biznes-qoidalar ham shu yerda)
 pnpm --filter @mehr/db seed     # hududlar, teglar, sozlamalar
 pnpm dev                        # hamma ilovalar
 ```
@@ -45,7 +45,7 @@ pnpm dev                        # hamma ilovalar
 - Admin: http://localhost:3001
 - S3 (SeaweedFS): http://localhost:8333, master UI: http://localhost:9333
 
-Biznes-qoidalar (1 yosh = 1 faol oila, oila limitlari, append-only audit) `packages/db/prisma/sql/constraints.sql` da — birinchi migratsiyadan keyin alohida migratsiya sifatida qo'shiladi (fayl boshidagi ko'rsatmaga qarang).
+Biznes-qoidalar (1 yosh = 1 faol oila, oila limitlari, append-only audit) bazaning o'zida: `packages/db/prisma/migrations/*_business_constraints`. Manba — `packages/db/prisma/sql/constraints.sql`.
 
 ## Tekshiruvlar
 
