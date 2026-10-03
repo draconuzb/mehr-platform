@@ -34,6 +34,7 @@
 | 23 | Brend — **"Mehr"** (ishchi nom) | Yakuniy nom keyinroq tanlanadi |
 | 24 | Fond — **mavjud NNT bilan hamkorlik** | NNT xodimlari koordinator bo'ladi; memorandum + safeguarding siyosati kelishib olinadi |
 | 25 | 14–17 yashash turida kuzatuv — **faqat oylik check-in** (v2) | Uyga tashrif faqat munosabat boshlanishidan oldin bo'ladi (6-bo'lim) |
+| 26 | Kirish — **faqat Telegram orqali** (MVP): bot deep-link + "Raqamni yuborish" tugmasi | Telefon raqamini Telegram tasdiqlaydi, SMS shlyuz kerak emas. SMS OTP — kerak bo'lsa keyinroq |
 
 ---
 
@@ -532,9 +533,9 @@ C bilan bir xil karkas, lekin farqlari:
 ### Auth
 | Metod | Yo'l | Izoh |
 |---|---|---|
-| POST | `/auth/otp/request` | `{phone}` |
-| POST | `/auth/otp/verify` | `{phone, code}` → tokenlar |
-| POST | `/auth/telegram` | Telegram Login Widget ma'lumoti (hash tekshiriladi) |
+| POST | `/auth/telegram/start` | → `{loginId, pollToken, deepLink}` — deep-link `t.me/<bot>?start=login_<kod>` |
+| POST | `/auth/telegram/poll` | `{loginId, pollToken}` → `PENDING` / `EXPIRED` / `OK` + tokenlar (bir martalik) |
+| POST | `/internal/telegram/login-confirm` | Faqat bot (X-Internal-Secret): `{code, telegramId, phone?}` → `OK` / `NEED_PHONE` / `PHONE_TAKEN` / ... |
 | POST | `/auth/refresh` | |
 | POST | `/auth/logout` | |
 | GET | `/auth/sessions` · DELETE `/auth/sessions/:id` | Qurilmalar ro'yxati |
@@ -765,4 +766,4 @@ Format: 2 haftalik sprintlar. Ishchi kuchi: 1 dasturchi + Claude. Har bir sprint
 5. ✅ Roadmap: MVP / v2 / v3
 6. ✅ Wireframe'lar + bosiladigan prototip
 7. ✅ Bosqich 0 — monorepo, Docker, Prisma sxemasi, CI
-8. MVP S1 — auth, rollar, PWA karkasi
+8. 🔄 MVP S1 — ✅ Telegram orqali kirish, sessiyalar · ⏳ rol tanlash, PWA'da token saqlash

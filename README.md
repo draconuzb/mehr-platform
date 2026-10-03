@@ -47,6 +47,15 @@ pnpm dev                        # hamma ilovalar
 
 Biznes-qoidalar (1 yosh = 1 faol oila, oila limitlari, append-only audit) bazaning o'zida: `packages/db/prisma/migrations/*_business_constraints`. Manba — `packages/db/prisma/sql/constraints.sql`.
 
+## Telegram bot (kirish uchun)
+
+1. [@BotFather](https://t.me/BotFather) → `/newbot` → tokenni oling
+2. `.env` ga yozing: `TELEGRAM_BOT_TOKEN=...` va `TELEGRAM_BOT_USERNAME=bot_nomi` (`@` siz)
+3. `pnpm dev` — API, web va bot birga ishga tushadi
+4. http://localhost:3000/login → «Telegram orqali kirish»
+
+Kirish oqimi: sayt deep-link oladi → botda Start → (birinchi marta) «Raqamimni yuborish» → sayt avtomatik kiradi.
+
 ## Tekshiruvlar
 
 ```bash
@@ -54,4 +63,4 @@ pnpm turbo run build typecheck test
 ```
 
 ## Holat
-TZ v1.3 · **Bosqich 0 bajarildi** (karkas). Keyingi: MVP S1 — auth (OTP + Telegram), rollar, PWA karkasi.
+TZ v1.3 · Bosqich 0 ✅ · MVP S1: Telegram orqali kirish ✅ (e2e testlar bilan). Keyingi: rol tanlash, PWA'da sessiyani saqlash.

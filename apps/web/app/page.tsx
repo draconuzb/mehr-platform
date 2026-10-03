@@ -29,8 +29,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
       <h1>{t(locale, "tagline")}</h1>
       <p className="lead">{t(locale, "lead")}</p>
       <div className="row">
-        <a className="btn" href="#">{t(locale, "ctaYouth")}</a>
-        <a className="btn sec" href="#">{t(locale, "ctaFamily")}</a>
+        <a className="btn" href="/login">{t(locale, "ctaYouth")}</a>
+        <a className="btn sec" href="/login">{t(locale, "ctaFamily")}</a>
       </div>
       <InstallPrompt label={t(locale, "install")} iosHint={t(locale, "iosHint")} />
     </main>

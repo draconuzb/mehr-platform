@@ -1,0 +1,215 @@
+import "reflect-metadata";
+import type { INestApplication } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { PrismaClient } from "@mehr/db";
+import { AppModule } from "../src/app.module";
+import { loadEnv } from "../src/config/env";
+import { configureApp } from "../src/setup";
+
+const SECRET = "test-internal-secret-123456";
+const prisma = new PrismaClient();
+let app: INestApplication;
+let base: string;
+
+async function api(path: string, init: RequestInit & { json?: unknown } = {}) {
+  const headers = new Headers(init.headers);
+  if (init.json !== undefined) headers.set("content-type", "application/json");
+  const res = await fetch(`${base}/v1${path}`, {
+    ...init,
+    headers,
+    body: init.json !== undefined ? JSON.stringify(init.json) : init.body,
+  });
+  const text = await res.text();
+  return { status: res.status, body: text ? JSON.parse(text) : null, headers: res.headers };
+}
+
+const confirm = (json: unknown, secret = SECRET) =>
+  api("/internal/telegram/login-confirm", { method: "POST", json, headers: { "x-internal-secret": secret } });
+
+function codeFrom(deepLink: string): string {
+  const m = /start=login_([A-Za-z0-9_-]+)$/.exec(deepLink);
+  if (!m?.[1]) throw new Error(`deep-link noto'g'ri: ${deepLink}`);
+  return m[1];
+}
+
+function refreshCookie(headers: Headers): string {
+  const raw = headers.getSetCookie().find((c) => c.startsWith("mehr_rt="));
+  if (!raw) throw new Error("refresh cookie yo'q");
+  return raw.split(";")[0]!;
+}
+
+/** To'liq kirish: start → bot tasdiqlaydi → poll */
+async function login(telegramId: string, phone?: string) {
+  const start = await api("/auth/telegram/start", { method: "POST" });
+  const code = codeFrom(start.body.deepLink);
+  const c = await confirm({ code, telegramId, phone });
+  const poll = await api("/auth/telegram/poll", { method: "POST", json: { loginId: start.body.loginId, pollToken: start.body.pollToken } });
+  return { start, code, confirm: c, poll };
+}
+
+beforeAll(async () => {
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  app = moduleRef.createNestApplication();
+  configureApp(app, loadEnv());
+  await app.listen(0);
+  base = await app.getUrl();
+  base = base.replace("[::1]", "localhost");
+});
+
+beforeEach(async () => {
+  // AuditLog trigger'i UPDATE/DELETE ni bloklaydi, TRUNCATE esa test bazasini tozalash uchun ishlaydi
+  await prisma.$executeRawUnsafe(
+    'TRUNCATE "AuditLog", "LoginRequest", "Session", "User" RESTART IDENTITY CASCADE',
+  );
+});
+
+afterAll(async () => {
+  await app?.close();
+  await prisma.$disconnect();
+});
+
+describe("Telegram orqali kirish", () => {
+  it("yangi foydalanuvchi: raqam so'raladi, keyin ro'yxatdan o'tadi va kiradi", async () => {
+    const start = await api("/auth/telegram/start", { method: "POST" });
+    expect(start.status).toBe(201);
+    expect(start.body.deepLink).toMatch(/^https:\/\/t\.me\/mehr_test_bot\?start=login_/);
+
+    const code = codeFrom(start.body.deepLink);
+    const pollBody = { loginId: start.body.loginId, pollToken: start.body.pollToken };
+
+    expect((await api("/auth/telegram/poll", { method: "POST", json: pollBody })).body).toEqual({ status: "PENDING" });
+
+    expect((await confirm({ code, telegramId: "555001" })).body).toEqual({ result: "NEED_PHONE" });
+    expect((await confirm({ code, telegramId: "555001", phone: "998901112233" })).body).toEqual({ result: "OK", isNew: true });
+
+    const poll = await api("/auth/telegram/poll", { method: "POST", json: pollBody });
+    expect(poll.status).toBe(200);
+    expect(poll.body.status).toBe("OK");
+    expect(poll.body.user).toMatchObject({ role: null, status: "PENDING" });
+    expect(poll.headers.getSetCookie().join()).toMatch(/mehr_rt=.*HttpOnly/i);
+
+    const me = await api("/me", { headers: { authorization: `Bearer ${poll.body.accessToken}` } });
+    expect(me.status).toBe(200);
+    expect(me.body).toMatchObject({ phone: "+998901112233", telegramLinked: true, onboarding: { roleChosen: false } });
+
+    // Bir martalik: qayta poll qilib bo'lmaydi
+    expect((await api("/auth/telegram/poll", { method: "POST", json: pollBody })).status).toBe(410);
+
+    const audit = await prisma.auditLog.findMany({ orderBy: { id: "asc" } });
+    expect(audit.map((a) => a.action)).toEqual(["auth.telegram.register", "auth.login"]);
+  });
+
+  it("qaytgan foydalanuvchidan raqam qayta so'ralmaydi", async () => {
+    await login("555002", "+998901112244");
+    const second = await login("555002");
+    expect(second.confirm.body).toEqual({ result: "OK", isNew: false });
+    expect(second.poll.body.status).toBe("OK");
+    expect(await prisma.user.count()).toBe(1);
+  });
+
+  it("boshqa Telegram akkauntiga bog'langan raqamni egallab bo'lmaydi", async () => {
+    await login("555003", "+998901112255");
+    const attacker = await login("999999", "+998901112255");
+    expect(attacker.confirm.body).toEqual({ result: "PHONE_TAKEN" });
+    expect(attacker.poll.body).toEqual({ status: "PENDING" });
+  });
+
+  it("ishlatilgan kod bilan qayta tasdiqlab bo'lmaydi", async () => {
+    const first = await login("555004", "+998901112266");
+    expect((await confirm({ code: first.code, telegramId: "555004" })).body).toEqual({ result: "EXPIRED" });
+  });
+
+  it("muddati o'tgan so'rov tasdiqlanmaydi", async () => {
+    const start = await api("/auth/telegram/start", { method: "POST" });
+    await prisma.loginRequest.update({ where: { id: start.body.loginId }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    expect((await confirm({ code: codeFrom(start.body.deepLink), telegramId: "555005", phone: "+998901112277" })).body).toEqual({
+      result: "EXPIRED",
+    });
+    const poll = await api("/auth/telegram/poll", {
+      method: "POST",
+      json: { loginId: start.body.loginId, pollToken: start.body.pollToken },
+    });
+    expect(poll.body).toEqual({ status: "EXPIRED" });
+  });
+
+  it("noto'g'ri pollToken bilan sessiya olinmaydi", async () => {
+    const start = await api("/auth/telegram/start", { method: "POST" });
+    await confirm({ code: codeFrom(start.body.deepLink), telegramId: "555006", phone: "+998901112288" });
+    const poll = await api("/auth/telegram/poll", {
+      method: "POST",
+      json: { loginId: start.body.loginId, pollToken: "x".repeat(43) },
+    });
+    expect(poll.status).toBe(404);
+  });
+
+  it("bloklangan foydalanuvchi kira olmaydi", async () => {
+    await login("555007", "+998901112299");
+    await prisma.user.update({ where: { telegramId: 555007n }, data: { status: "BANNED" } });
+    expect((await login("555007")).confirm.body).toEqual({ result: "BLOCKED" });
+  });
+});
+
+describe("Ichki endpoint himoyasi", () => {
+  it("sirsiz yoki noto'g'ri sir bilan rad etiladi", async () => {
+    const start = await api("/auth/telegram/start", { method: "POST" });
+    const body = { code: codeFrom(start.body.deepLink), telegramId: "1", phone: "+998900000000" };
+    expect((await api("/internal/telegram/login-confirm", { method: "POST", json: body })).status).toBe(401);
+    expect((await confirm(body, "wrong-secret-wrong-secret")).status).toBe(401);
+  });
+
+  it("noto'g'ri formatdagi kod rad etiladi", async () => {
+    expect((await confirm({ code: "../../etc", telegramId: "1" })).status).toBe(400);
+  });
+});
+
+describe("Sessiyalar", () => {
+  it("refresh tokenni almashtiradi, eski token qayta kelsa — barcha sessiyalar bekor qilinadi", async () => {
+    const { poll } = await login("555010", "+998901113300");
+    const cookie1 = refreshCookie(poll.headers);
+
+    const r1 = await api("/auth/refresh", { method: "POST", headers: { cookie: cookie1 } });
+    expect(r1.status).toBe(200);
+    const cookie2 = refreshCookie(r1.headers);
+    expect(cookie2).not.toBe(cookie1);
+
+    // Hujumchi eski tokenni ishlatadi
+    expect((await api("/auth/refresh", { method: "POST", headers: { cookie: cookie1 } })).status).toBe(401);
+
+    // Endi haqiqiy egasining tokeni ham, access token ham yaroqsiz
+    expect((await api("/auth/refresh", { method: "POST", headers: { cookie: cookie2 } })).status).toBe(401);
+    expect((await api("/me", { headers: { authorization: `Bearer ${r1.body.accessToken}` } })).status).toBe(401);
+
+    const sessions = await prisma.session.findMany();
+    expect(sessions.every((s) => s.revokeReason === "REFRESH_TOKEN_REUSE")).toBe(true);
+    expect((await prisma.auditLog.findMany()).map((a) => a.action)).toContain("auth.refresh.reuse_detected");
+  });
+
+  it("logout'dan keyin access va refresh token ishlamaydi", async () => {
+    const { poll } = await login("555011", "+998901113311");
+    const auth = { authorization: `Bearer ${poll.body.accessToken}` };
+    expect((await api("/auth/logout", { method: "POST", headers: auth })).status).toBe(204);
+    expect((await api("/me", { headers: auth })).status).toBe(401);
+    expect((await api("/auth/refresh", { method: "POST", headers: { cookie: refreshCookie(poll.headers) } })).status).toBe(401);
+  });
+
+  it("soxta yoki tokensiz so'rov rad etiladi", async () => {
+    expect((await api("/me")).status).toBe(401);
+    expect((await api("/me", { headers: { authorization: "Bearer abc.def.ghi" } })).status).toBe(401);
+    expect((await api("/auth/refresh", { method: "POST" })).status).toBe(401);
+  });
+});
+
+// Oxirida turadi: limitdan oshgach throttler IP ni ttl davomida bloklaydi
+describe("Rate limit", () => {
+  it("start endpointi limitdan oshganda 429 qaytaradi", async () => {
+    process.env.AUTH_START_LIMIT_PER_MIN = "3";
+    try {
+      const statuses: number[] = [];
+      for (let i = 0; i < 5; i++) statuses.push((await api("/auth/telegram/start", { method: "POST" })).status);
+      expect(statuses.filter((s) => s === 429).length).toBeGreaterThan(0);
+    } finally {
+      process.env.AUTH_START_LIMIT_PER_MIN = "1000";
+    }
+  });
+});

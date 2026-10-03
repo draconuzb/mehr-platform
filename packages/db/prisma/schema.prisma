@@ -281,7 +281,7 @@ model User {
   phone      String     @unique
   telegramId BigInt?    @unique
   oneidId    String?    @unique
-  role       UserRole
+  role       UserRole? // ro'yxatdan o'tgach tanlanadi (POST /me/role)
   status     UserStatus @default(PENDING)
   locale     Locale     @default(UZ_LATN)
   birthDate  DateTime?  @db.Date
@@ -293,6 +293,7 @@ model User {
   deletedAt  DateTime?
 
   sessions            Session[]
+  loginRequests       LoginRequest[]
   staffRegions        StaffRegion[]
   youthProfile        YouthProfile?
   familyMember        FamilyMember?
@@ -326,17 +327,47 @@ model User {
 }
 
 model Session {
-  id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @db.Uuid
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshTokenHash String    @unique
-  device           String?
-  ip               String?
-  createdAt        DateTime  @default(now())
-  lastUsedAt       DateTime  @default(now())
-  revokedAt        DateTime?
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @db.Uuid
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash     String    @unique
+  prevRefreshTokenHash String? // eski token qayta ishlatilsa — barcha sessiyalar bekor qilinadi
+  device               String?
+  ip                   String?
+  createdAt            DateTime  @default(now())
+  lastUsedAt           DateTime  @default(now())
+  expiresAt            DateTime
+  revokedAt            DateTime?
+  revokeReason         String?
 
   @@index([userId])
+  @@index([prevRefreshTokenHash])
+}
+
+enum LoginStatus {
+  PENDING
+  CONFIRMED
+  CONSUMED
+  EXPIRED
+}
+
+// Telegram orqali kirish: sayt deep-link oladi, bot tasdiqlaydi, sayt so'rov orqali sessiya oladi
+model LoginRequest {
+  id            String      @id @default(uuid()) @db.Uuid
+  codeHash      String      @unique // deep-link ichidagi kod (sha256)
+  pollTokenHash String // faqat saytga berilgan so'rov tokeni (sha256)
+  status        LoginStatus @default(PENDING)
+  userId        String?     @db.Uuid
+  user          User?       @relation(fields: [userId], references: [id])
+  telegramId    BigInt?
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime    @default(now())
+  expiresAt     DateTime
+  confirmedAt   DateTime?
+  consumedAt    DateTime?
+
+  @@index([status, expiresAt])
 }
 
 model StaffRegion {
