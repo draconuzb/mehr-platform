@@ -22,7 +22,9 @@ const bot = new Bot(token);
 const PENDING_TTL_MS = 10 * 60 * 1000;
 const pending = new Map<number, { code: string; at: number }>();
 
-const openAppKeyboard = () => new InlineKeyboard().url(TEXT.openApp, WEB_ORIGIN);
+// Telegram inline tugmada faqat ochiq https manzilni qabul qiladi (localhost — yo'q)
+const canLinkApp = WEB_ORIGIN.startsWith("https://");
+const openAppMarkup = () => (canLinkApp ? { reply_markup: new InlineKeyboard().url(TEXT.openApp, WEB_ORIGIN) } : {});
 const phoneKeyboard = () => new Keyboard().requestContact(TEXT.sharePhoneButton).resized().oneTime();
 
 // Faqat shaxsiy chatlar: guruhda kontakt yoki kirish kodini qayta ishlamaymiz
@@ -34,7 +36,7 @@ bot.use(async (ctx, next) => {
 bot.command("start", async (ctx) => {
   const payload = ctx.match?.trim() ?? "";
   if (!payload.startsWith("login_")) {
-    await ctx.reply(TEXT.welcome, { reply_markup: openAppKeyboard() });
+    await ctx.reply(TEXT.welcome, openAppMarkup());
     return;
   }
 
@@ -45,7 +47,7 @@ bot.command("start", async (ctx) => {
     await ctx.reply(confirmText(result), { reply_markup: phoneKeyboard() });
     return;
   }
-  await ctx.reply(confirmText(result), result.result === "OK" ? { reply_markup: openAppKeyboard() } : {});
+  await ctx.reply(confirmText(result), result.result === "OK" ? openAppMarkup() : {});
 });
 
 bot.on("message:contact", async (ctx) => {
@@ -65,7 +67,7 @@ bot.on("message:contact", async (ctx) => {
 
   const result = await api.confirmLogin({ code: entry.code, telegramId: String(ctx.from.id), phone: contact.phone_number });
   await ctx.reply(confirmText(result), { reply_markup: { remove_keyboard: true } });
-  if (result.result === "OK") await ctx.reply("👇", { reply_markup: openAppKeyboard() });
+  if (result.result === "OK" && canLinkApp) await ctx.reply("👇", openAppMarkup());
 });
 
 bot.command("sos", async (ctx) => {
