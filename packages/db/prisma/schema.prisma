@@ -1,0 +1,880 @@
+// Mehr — ma'lumotlar modeli (TZ.md, 5E bo'limi)
+//
+// Prisma qo'llab-quvvatlamaydigan qoidalar (partial unique index, CHECK) alohida
+// migratsiyada SQL bilan qo'shiladi: prisma/sql/constraints.sql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enumlar ─────────────────────────────
+
+enum UserRole {
+  YOUTH
+  FAMILY_ADULT
+  GUARDIAN
+  COORDINATOR
+  MODERATOR
+  PSYCHOLOGIST
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  FROZEN
+  BANNED
+  DELETED
+}
+
+enum Locale {
+  UZ_LATN
+  UZ_CYRL
+  RU
+  KAA
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum SchoolType {
+  LYCEUM
+  COLLEGE
+  TECHNIKUM
+  UNIVERSITY
+}
+
+enum RelationType {
+  LIVING
+  MENTORING
+  SUPPORT
+}
+
+enum SupportType {
+  TUITION
+  RENT
+  FOOD
+  CLOTHING
+  COURSES
+  TRANSPORT
+}
+
+enum FamilyRole {
+  FATHER
+  MOTHER
+  CHILD
+  GRANDMOTHER
+  GRANDFATHER
+  OTHER_RELATIVE
+}
+
+enum HousingType {
+  HOUSE
+  APARTMENT
+}
+
+enum ProfileVisibility {
+  DRAFT
+  IN_REVIEW
+  VISIBLE
+  HIDDEN
+}
+
+enum ConsentStatus {
+  PENDING
+  APPROVED
+  REVOKED
+  REJECTED
+}
+
+enum TagType {
+  INTEREST
+  SKILL
+  MENTOR_AREA
+}
+
+enum DocumentType {
+  PASSPORT
+  CRIMINAL_RECORD
+  STUDY_CERTIFICATE
+  GUARDIAN_CONSENT
+  AGREEMENT
+}
+
+enum DocumentStatus {
+  UPLOADING
+  UPLOADED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum VerificationType {
+  YOUTH
+  FAMILY
+  FAMILY_MEMBER
+  GUARDIAN
+  HOUSING
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_INFO
+}
+
+enum MediaKind {
+  PHOTO
+  VIDEO
+  VOICE
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Side {
+  YOUTH
+  FAMILY
+}
+
+enum InterestStatus {
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  WITHDRAWN
+}
+
+// TZ 5D: holatlar zanjiri
+enum MatchState {
+  MATCHED
+  CHATTING
+  MEETING_SCHEDULED
+  MET
+  TRIAL
+  TRIAL_CONFIRMED
+  AGREEMENT_PENDING
+  ACTIVE
+  ENDED
+  FROZEN
+  CANCELLED
+}
+
+enum MessageKind {
+  TEXT
+  PHOTO
+  VOICE
+}
+
+enum MessageStatus {
+  DELIVERED
+  HELD
+  REJECTED
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  DONE
+  CANCELLED
+  NO_SHOW
+}
+
+enum VenueType {
+  FOUNDATION_OFFICE
+  PARTNER
+}
+
+enum AgreementStatus {
+  DRAFT
+  SIGNING
+  SIGNED
+  APPROVED
+  TERMINATED
+}
+
+enum ReportCategory {
+  INAPPROPRIATE_CONTENT
+  HARASSMENT
+  OFF_PLATFORM_CONTACT
+  MONEY_REQUEST
+  SAFETY_CONCERN
+  FAKE_PROFILE
+  OTHER
+}
+
+enum SosType {
+  DANGER
+  WANT_TO_LEAVE
+  WANT_TO_TALK
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+enum RiskSignalType {
+  NIGHT_ACTIVITY
+  OFF_PLATFORM_CONTACT
+  MASS_INTEREST
+  NARROW_TARGETING
+  GIFT_OR_MONEY
+  LIMIT_ABUSE
+  CHECKIN_NEGATIVE
+  CHECKIN_MISSED
+}
+
+// ─────────────────────────── Ma'lumotnomalar ───────────────────────────
+
+model Region {
+  id        Int         @id @default(autoincrement())
+  code      String      @unique
+  names     Json // { uz_latn, uz_cyrl, ru, kaa }
+  cities    City[]
+  users     User[]      @relation("UserRegion")
+  youths    YouthProfile[]
+  staff     StaffRegion[]
+}
+
+model City {
+  id        Int        @id @default(autoincrement())
+  regionId  Int
+  region    Region     @relation(fields: [regionId], references: [id])
+  names     Json
+  districts District[]
+  youths    YouthProfile[]
+  families  Family[]
+  housings  Housing[]
+  venues    Venue[]
+
+  @@index([regionId])
+}
+
+model District {
+  id       Int       @id @default(autoincrement())
+  cityId   Int
+  city     City      @relation(fields: [cityId], references: [id])
+  names    Json
+  families Family[]
+  housings Housing[]
+
+  @@index([cityId])
+}
+
+// ─────────────────────────── Foydalanuvchilar ───────────────────────────
+
+model User {
+  id         String     @id @default(uuid()) @db.Uuid
+  phone      String     @unique
+  telegramId BigInt?    @unique
+  oneidId    String?    @unique
+  role       UserRole
+  status     UserStatus @default(PENDING)
+  locale     Locale     @default(UZ_LATN)
+  birthDate  DateTime?  @db.Date
+  gender     Gender?
+  regionId   Int?
+  region     Region?    @relation("UserRegion", fields: [regionId], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
+
+  sessions            Session[]
+  staffRegions        StaffRegion[]
+  youthProfile        YouthProfile?
+  familyMember        FamilyMember?
+  guardianOf          GuardianLink[]        @relation("Guardian")
+  documents           Document[]
+  verificationsAsSubj Verification[]        @relation("VerificationSubject")
+  verificationsRev    Verification[]        @relation("VerificationReviewer")
+  messages            Message[]
+  signatures          AgreementSignature[]
+  checkins            Checkin[]
+  exitSurveys         ExitSurvey[]
+  reportsFiled        Report[]              @relation("Reporter")
+  reportsAgainst      Report[]              @relation("ReportTarget")
+  reportsAssigned     Report[]              @relation("ReportAssignee")
+  riskSignals         RiskSignal[]          @relation("RiskSubject")
+  riskReviewed        RiskSignal[]          @relation("RiskReviewer")
+  profileViews        ProfileView[]
+  auditLogs           AuditLog[]
+  blocksMade          Block[]               @relation("Blocker")
+  blocksReceived      Block[]               @relation("Blocked")
+  notifications       Notification[]
+  meetingsCoordinated Meeting[]
+  homeVisits          HomeVisit[]
+  housingsInspected   Housing[]
+  agreementsApproved  Agreement[]
+  blacklistAdded      Blacklist[]
+  stateChanges        MatchStateHistory[]
+  callsSupervised     Call[]
+
+  @@index([role, status])
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String    @unique
+  device           String?
+  ip               String?
+  createdAt        DateTime  @default(now())
+  lastUsedAt       DateTime  @default(now())
+  revokedAt        DateTime?
+
+  @@index([userId])
+}
+
+model StaffRegion {
+  userId   String @db.Uuid
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regionId Int
+  region   Region @relation(fields: [regionId], references: [id])
+
+  @@id([userId, regionId])
+}
+
+// ─────────────────────────── Profillar ───────────────────────────
+
+model YouthProfile {
+  userId       String            @id @db.Uuid
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  homeRegionId Int
+  homeRegion   Region            @relation(fields: [homeRegionId], references: [id])
+  cityId       Int
+  city         City              @relation(fields: [cityId], references: [id])
+  schoolType   SchoolType
+  schoolName   String
+  fieldOfStudy String
+  course       Int?
+  bioGoals     String
+  temperament  Json // { calmActive: 1..5, quietOpen: 1..5 }
+  routine      Json // { earlyRiser: bool, homeOften: bool }
+  smokes       Boolean           @default(false)
+  prefs        Json // munosabat turlari, oila tarkibi, uy hayvoni/allergiya, chekish, til, din
+  visibility   ProfileVisibility @default(DRAFT)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  tags        YouthTag[]
+  media       Media[]
+  guardians   GuardianLink[]
+  interests   Interest[]
+  matches     Match[]
+  matchScores MatchScore[]
+
+  @@index([cityId, visibility])
+}
+
+model GuardianLink {
+  id             String        @id @default(uuid()) @db.Uuid
+  youthUserId    String        @db.Uuid
+  youth          YouthProfile  @relation(fields: [youthUserId], references: [userId], onDelete: Cascade)
+  guardianUserId String        @db.Uuid
+  guardian       User          @relation("Guardian", fields: [guardianUserId], references: [id])
+  relation       String
+  consentStatus  ConsentStatus @default(PENDING)
+  consentDocId   String?       @db.Uuid
+  consentDoc     Document?     @relation(fields: [consentDocId], references: [id])
+  consentedAt    DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@unique([youthUserId, guardianUserId])
+}
+
+model Family {
+  id           String            @id @default(uuid()) @db.Uuid
+  cityId       Int
+  city         City              @relation(fields: [cityId], references: [id])
+  districtId   Int?
+  district     District?         @relation(fields: [districtId], references: [id])
+  offerTypes   RelationType[]
+  supportTypes SupportType[]
+  houseRules   Json
+  prefs        Json // yosh oralig'i, jins, viloyatlar (yumshoq), til, din
+  visibility   ProfileVisibility @default(DRAFT)
+  successCount Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  members       FamilyMember[]
+  housing       Housing?
+  tags          FamilyTag[]
+  media         Media[]
+  verifications Verification[]
+  interests     Interest[]
+  matches       Match[]
+  matchScores   MatchScore[]
+  homeVisits    HomeVisit[]
+
+  @@index([cityId, visibility])
+}
+
+model FamilyMember {
+  id           String     @id @default(uuid()) @db.Uuid
+  familyId     String     @db.Uuid
+  family       Family     @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId       String?    @unique @db.Uuid // faqat 18+ a'zolarning o'z logini bor
+  user         User?      @relation(fields: [userId], references: [id])
+  firstName    String
+  lastName     String
+  birthDate    DateTime   @db.Date
+  gender       Gender
+  roleInFamily FamilyRole
+  occupation   String?
+  livesInHouse Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  @@index([familyId])
+}
+
+model Housing {
+  familyId        String      @id @db.Uuid
+  family          Family      @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  type            HousingType
+  cityId          Int
+  city            City        @relation(fields: [cityId], references: [id])
+  districtId      Int
+  district        District    @relation(fields: [districtId], references: [id])
+  exactAddressEnc Bytes // 🔒 ilova darajasida shifrlangan
+  hasPrivateRoom  Boolean
+  pets            Boolean     @default(false)
+  smokingInside   Boolean     @default(false)
+  inspectedAt     DateTime?
+  inspectedById   String?     @db.Uuid
+  inspectedBy     User?       @relation(fields: [inspectedById], references: [id])
+}
+
+model Tag {
+  id       Int        @id @default(autoincrement())
+  type     TagType
+  slug     String
+  labels   Json // { uz_latn, uz_cyrl, ru, kaa }
+  approved Boolean    @default(false)
+  youths   YouthTag[]
+  families FamilyTag[]
+
+  @@unique([type, slug])
+}
+
+model YouthTag {
+  youthUserId String       @db.Uuid
+  youth       YouthProfile @relation(fields: [youthUserId], references: [userId], onDelete: Cascade)
+  tagId       Int
+  tag         Tag          @relation(fields: [tagId], references: [id])
+
+  @@id([youthUserId, tagId])
+}
+
+model FamilyTag {
+  familyId String @db.Uuid
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  tagId    Int
+  tag      Tag    @relation(fields: [tagId], references: [id])
+
+  @@id([familyId, tagId])
+}
+
+// ─────────────────────── Verifikatsiya va hujjatlar ───────────────────────
+
+model Document {
+  id          String         @id @default(uuid()) @db.Uuid
+  ownerUserId String         @db.Uuid
+  owner       User           @relation(fields: [ownerUserId], references: [id])
+  type        DocumentType
+  storageKey  String // 🔒 documents bucket
+  sha256      String?
+  mime        String
+  sizeBytes   Int
+  status      DocumentStatus @default(UPLOADING)
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+
+  consentFor GuardianLink[]
+
+  @@index([ownerUserId, type])
+}
+
+model Verification {
+  id            String             @id @default(uuid()) @db.Uuid
+  type          VerificationType
+  subjectUserId String?            @db.Uuid
+  subjectUser   User?              @relation("VerificationSubject", fields: [subjectUserId], references: [id])
+  familyId      String?            @db.Uuid
+  family        Family?            @relation(fields: [familyId], references: [id])
+  status        VerificationStatus @default(PENDING)
+  reviewerId    String?            @db.Uuid
+  reviewer      User?              @relation("VerificationReviewer", fields: [reviewerId], references: [id])
+  reason        String?
+  createdAt     DateTime           @default(now())
+  decidedAt     DateTime?
+
+  @@index([status, createdAt])
+}
+
+model Blacklist {
+  id           String   @id @default(uuid()) @db.Uuid
+  passportHash String   @unique
+  reason       String
+  addedById    String   @db.Uuid
+  addedBy      User     @relation(fields: [addedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+// ─────────────────────────── Media ───────────────────────────
+
+model Media {
+  id               String           @id @default(uuid()) @db.Uuid
+  youthUserId      String?          @db.Uuid
+  youth            YouthProfile?    @relation(fields: [youthUserId], references: [userId], onDelete: Cascade)
+  familyId         String?          @db.Uuid
+  family           Family?          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  kind             MediaKind
+  originalKey      String
+  processedKey     String?
+  hlsKey           String?
+  durationSec      Int?
+  moderationStatus ModerationStatus @default(PENDING)
+  rejectReason     String?
+  order            Int              @default(0)
+  createdAt        DateTime         @default(now())
+
+  messages Message[]
+
+  @@index([moderationStatus, createdAt])
+}
+
+// ─────────────────────────── Moslik va juftlik ───────────────────────────
+
+model MatchScore {
+  youthUserId String       @db.Uuid
+  youth       YouthProfile @relation(fields: [youthUserId], references: [userId], onDelete: Cascade)
+  familyId    String       @db.Uuid
+  family      Family       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  score       Float
+  reasons     Json
+  computedAt  DateTime     @default(now())
+
+  @@id([youthUserId, familyId])
+  @@index([youthUserId, score])
+  @@index([familyId, score])
+}
+
+model Interest {
+  id          String         @id @default(uuid()) @db.Uuid
+  fromSide    Side
+  youthUserId String         @db.Uuid
+  youth       YouthProfile   @relation(fields: [youthUserId], references: [userId], onDelete: Cascade)
+  familyId    String         @db.Uuid
+  family      Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  status      InterestStatus @default(SENT)
+  createdAt   DateTime       @default(now())
+  expiresAt   DateTime // 14 kun
+  respondedAt DateTime?
+
+  match Match?
+
+  @@index([youthUserId, status])
+  @@index([familyId, status])
+  @@index([status, expiresAt])
+}
+
+model Match {
+  id          String         @id @default(uuid()) @db.Uuid
+  youthUserId String         @db.Uuid
+  youth       YouthProfile   @relation(fields: [youthUserId], references: [userId])
+  familyId    String         @db.Uuid
+  family      Family         @relation(fields: [familyId], references: [id])
+  interestId  String?        @unique @db.Uuid
+  interest    Interest?      @relation(fields: [interestId], references: [id])
+  state       MatchState     @default(MATCHED)
+  offerTypes  RelationType[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  history     MatchStateHistory[]
+  messages    Message[]
+  calls       Call[]
+  meetings    Meeting[]
+  agreement   Agreement?
+  exitSurveys ExitSurvey[]
+
+  @@index([youthUserId, state])
+  @@index([familyId, state])
+}
+
+model MatchStateHistory {
+  id        String      @id @default(uuid()) @db.Uuid
+  matchId   String      @db.Uuid
+  match     Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  fromState MatchState?
+  toState   MatchState
+  actorId   String?     @db.Uuid
+  actor     User?       @relation(fields: [actorId], references: [id])
+  reason    String?
+  at        DateTime    @default(now())
+
+  @@index([matchId, at])
+}
+
+// ─────────────────────────── Muloqot ───────────────────────────
+
+model Message {
+  id               String        @id @default(uuid()) @db.Uuid
+  matchId          String        @db.Uuid
+  match            Match         @relation(fields: [matchId], references: [id])
+  senderId         String        @db.Uuid
+  sender           User          @relation(fields: [senderId], references: [id])
+  kind             MessageKind
+  body             String?
+  mediaId          String?       @db.Uuid
+  media            Media?        @relation(fields: [mediaId], references: [id])
+  transcript       String?
+  filterFlags      Json?
+  status           MessageStatus @default(DELIVERED)
+  hiddenFor        String[]      @db.Uuid
+  createdAt        DateTime      @default(now())
+
+  reports Report[]
+
+  @@index([matchId, createdAt])
+  @@index([status, createdAt])
+}
+
+// v2: video qo'ng'iroq
+model Call {
+  id           String    @id @default(uuid()) @db.Uuid
+  matchId      String    @db.Uuid
+  match        Match     @relation(fields: [matchId], references: [id])
+  startedById  String    @db.Uuid
+  participants String[]  @db.Uuid
+  supervisorId String?   @db.Uuid // 14–17 uchun majburiy
+  supervisor   User?     @relation(fields: [supervisorId], references: [id])
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+
+  @@index([matchId])
+}
+
+model Venue {
+  id       String    @id @default(uuid()) @db.Uuid
+  cityId   Int
+  city     City      @relation(fields: [cityId], references: [id])
+  name     String
+  address  String
+  type     VenueType
+  active   Boolean   @default(true)
+  meetings Meeting[]
+}
+
+model Meeting {
+  id            String        @id @default(uuid()) @db.Uuid
+  matchId       String        @db.Uuid
+  match         Match         @relation(fields: [matchId], references: [id])
+  venueId       String        @db.Uuid
+  venue         Venue         @relation(fields: [venueId], references: [id])
+  coordinatorId String?       @db.Uuid
+  coordinator   User?         @relation(fields: [coordinatorId], references: [id])
+  scheduledAt   DateTime
+  status        MeetingStatus @default(SCHEDULED)
+  feedback      Json? // { youth: {...}, family: {...}, coordinator: {...} } — tomonlar bir-birinikini ko'rmaydi
+  createdAt     DateTime      @default(now())
+
+  @@index([coordinatorId, scheduledAt])
+}
+
+model HomeVisit {
+  id            String    @id @default(uuid()) @db.Uuid
+  familyId      String    @db.Uuid
+  family        Family    @relation(fields: [familyId], references: [id])
+  coordinatorId String    @db.Uuid
+  coordinator   User      @relation(fields: [coordinatorId], references: [id])
+  scheduledAt   DateTime
+  doneAt        DateTime?
+  result        Json?
+}
+
+// ─────────────────────────── Kelishuv va kuzatuv ───────────────────────────
+
+model Agreement {
+  id              String          @id @default(uuid()) @db.Uuid
+  matchId         String          @unique @db.Uuid
+  match           Match           @relation(fields: [matchId], references: [id])
+  templateVersion String
+  content         Json
+  pdfKey          String?
+  status          AgreementStatus @default(DRAFT)
+  approvedById    String?         @db.Uuid
+  approvedBy      User?           @relation(fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+  endsAt          DateTime?
+  createdAt       DateTime        @default(now())
+
+  signatures AgreementSignature[]
+  checkins   Checkin[]
+}
+
+model AgreementSignature {
+  agreementId String    @db.Uuid
+  agreement   Agreement @relation(fields: [agreementId], references: [id])
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id])
+  smsCodeHash String
+  ip          String?
+  signedAt    DateTime  @default(now())
+
+  @@id([agreementId, userId])
+}
+
+model Checkin {
+  id           String    @id @default(uuid()) @db.Uuid
+  agreementId  String    @db.Uuid
+  agreement    Agreement @relation(fields: [agreementId], references: [id])
+  respondentId String    @db.Uuid
+  respondent   User      @relation(fields: [respondentId], references: [id])
+  answers      Json?
+  riskFlag     Boolean   @default(false)
+  dueAt        DateTime
+  answeredAt   DateTime?
+
+  @@index([dueAt, answeredAt])
+}
+
+model ExitSurvey {
+  id           String   @id @default(uuid()) @db.Uuid
+  matchId      String   @db.Uuid
+  match        Match    @relation(fields: [matchId], references: [id])
+  respondentId String   @db.Uuid
+  respondent   User     @relation(fields: [respondentId], references: [id])
+  answers      Json
+  createdAt    DateTime @default(now())
+
+  @@unique([matchId, respondentId])
+}
+
+// ─────────────────────────── Xavfsizlik va audit ───────────────────────────
+
+model Report {
+  id           String          @id @default(uuid()) @db.Uuid
+  reporterId   String          @db.Uuid
+  reporter     User            @relation("Reporter", fields: [reporterId], references: [id])
+  targetUserId String?         @db.Uuid
+  targetUser   User?           @relation("ReportTarget", fields: [targetUserId], references: [id])
+  messageId    String?         @db.Uuid
+  message      Message?        @relation(fields: [messageId], references: [id])
+  mediaId      String?         @db.Uuid
+  category     ReportCategory?
+  isSos        Boolean         @default(false)
+  sosType      SosType?
+  location     Json?
+  text         String?
+  status       ReportStatus    @default(OPEN)
+  assigneeId   String?         @db.Uuid
+  assignee     User?           @relation("ReportAssignee", fields: [assigneeId], references: [id])
+  resolution   String?
+  createdAt    DateTime        @default(now())
+  resolvedAt   DateTime?
+
+  @@index([isSos, status, createdAt])
+}
+
+model RiskSignal {
+  id           String         @id @default(uuid()) @db.Uuid
+  subjectId    String         @db.Uuid
+  subject      User           @relation("RiskSubject", fields: [subjectId], references: [id])
+  type         RiskSignalType
+  score        Float
+  details      Json
+  reviewedById String?        @db.Uuid
+  reviewedBy   User?          @relation("RiskReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  createdAt    DateTime       @default(now())
+
+  @@index([reviewedAt, createdAt])
+}
+
+// Faqat qo'shiladi (append-only) — UPDATE/DELETE huquqi constraints.sql da olib qo'yiladi
+model ProfileView {
+  id        BigInt   @id @default(autoincrement())
+  viewerId  String   @db.Uuid
+  viewer    User     @relation(fields: [viewerId], references: [id])
+  profileId String   @db.Uuid // youth user_id yoki family id
+  side      Side
+  viewedAt  DateTime @default(now())
+
+  @@index([viewerId, viewedAt])
+  @@index([profileId, viewedAt])
+}
+
+// Faqat qo'shiladi (append-only)
+model AuditLog {
+  id       BigInt   @id @default(autoincrement())
+  actorId  String?  @db.Uuid
+  actor    User?    @relation(fields: [actorId], references: [id])
+  action   String
+  entity   String
+  entityId String
+  reason   String?
+  diff     Json?
+  ip       String?
+  at       DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, at])
+}
+
+model Block {
+  blockerId String   @db.Uuid
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blockedId String   @db.Uuid
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+}
+
+// ─────────────────────────── Kontent va tizim ───────────────────────────
+
+model Story {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       Json
+  body        Json
+  consents    Json // kim, qachon rozilik berdi
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+// Moslik og'irliklari, limitlar va boshqa sozlamalar (admin panel orqali)
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}

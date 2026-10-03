@@ -763,5 +763,6 @@ Format: 2 haftalik sprintlar. Ishchi kuchi: 1 dasturchi + Claude. Har bir sprint
 3. ✅ Ekranlar ro'yxati (wireframe — keyinroq)
 4. ✅ API spetsifikatsiya (v1)
 5. ✅ Roadmap: MVP / v2 / v3
-6. Wireframe'lar (asosiy 10–15 ekran)
-7. Bosqich 0 — repo va infratuzilmani ko'tarish
+6. ✅ Wireframe'lar + bosiladigan prototip
+7. ✅ Bosqich 0 — monorepo, Docker, Prisma sxemasi, CI
+8. MVP S1 — auth, rollar, PWA karkasi

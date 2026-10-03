@@ -1,0 +1,48 @@
+# Lokal ishlab chiqish uchun infratuzilma: Postgres (PostGIS), Redis, MinIO
+name: mehr
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: mehr
+      POSTGRES_PASSWORD: mehr_dev_password
+      POSTGRES_DB: mehr
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mehr"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: mehr
+      MINIO_ROOT_PASSWORD: mehr_dev_password
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [miniodata:/data]
+
+  # Bucketlarni yaratadi: media (ochiq emas), documents (alohida, shifrlangan hujjatlar)
+  minio-init:
+    image: minio/mc:latest
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 mehr mehr_dev_password;
+      mc mb -p local/mehr-media local/mehr-documents;
+      mc anonymous set none local/mehr-media;
+      mc anonymous set none local/mehr-documents;
+      exit 0;"
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:

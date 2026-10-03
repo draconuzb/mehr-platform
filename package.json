@@ -1,0 +1,27 @@
+{
+  "name": "mehr-platform",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @mehr/db generate",
+    "db:migrate": "pnpm --filter @mehr/db migrate:dev",
+    "db:studio": "pnpm --filter @mehr/db studio",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "22",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.7",
+    "typescript": "~5.7",
+    "vitest": "^5.0.3"
+  }
+}
