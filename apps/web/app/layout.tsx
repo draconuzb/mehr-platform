@@ -17,8 +17,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uz">
-      <body>{children}</body>
+    <html lang="uz" suppressHydrationWarning>
+      {/* Brauzer kengaytmalari body ga atribut qo'shadi — faqat shu darajadagi atribut farqini e'tiborsiz qoldiramiz */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
