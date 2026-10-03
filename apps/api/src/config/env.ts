@@ -20,6 +20,10 @@ const EnvSchema = z.object({
   COOKIE_SECURE: bool.default("false"),
   TELEGRAM_BOT_USERNAME: z.string().default(""),
   BOT_INTERNAL_SECRET: z.string().min(16),
+  // AES-256-GCM kaliti (base64, 32 bayt): oilaning aniq manzili va boshqa 🔒 maydonlar uchun
+  FIELD_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, "base64").length === 32, "32 baytlik base64 kalit kerak (openssl rand -base64 32)"),
   LOGIN_REQUEST_TTL_SEC: z.coerce.number().int().positive().default(10 * 60),
 });
 

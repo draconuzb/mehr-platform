@@ -2,7 +2,7 @@ import { config as loadDotenv } from "dotenv";
 import { resolve } from "node:path";
 import { Bot, InlineKeyboard, Keyboard } from "grammy";
 import { createApi } from "./api";
-import { TEXT, confirmText } from "./texts";
+import { TEXT, confirmText, joinText } from "./texts";
 
 loadDotenv({ path: resolve(__dirname, "../../../.env") });
 
@@ -20,7 +20,12 @@ const bot = new Bot(token);
 // Raqam kutilayotgan kirish so'rovlari: telegramId → kod. Bot qayta ishga tushsa,
 // foydalanuvchi saytdagi tugmani qayta bosadi (so'rov baribir 10 daqiqada eskiradi).
 const PENDING_TTL_MS = 10 * 60 * 1000;
-const pending = new Map<number, { code: string; at: number }>();
+type PendingKind = "login" | "join";
+const pending = new Map<number, { kind: PendingKind; code: string; at: number }>();
+
+function identity(from: { id: number; first_name: string; last_name?: string }, phone?: string) {
+  return { telegramId: String(from.id), phone, firstName: from.first_name, lastName: from.last_name };
+}
 
 // Telegram inline tugmada faqat ochiq https manzilni qabul qiladi (localhost — yo'q)
 const canLinkApp = WEB_ORIGIN.startsWith("https://");
@@ -35,19 +40,33 @@ bot.use(async (ctx, next) => {
 
 bot.command("start", async (ctx) => {
   const payload = ctx.match?.trim() ?? "";
-  if (!payload.startsWith("login_")) {
-    await ctx.reply(TEXT.welcome, openAppMarkup());
+  const from = ctx.from!;
+
+  if (payload.startsWith("login_")) {
+    const code = payload.slice("login_".length);
+    const result = await api.confirmLogin({ code, ...identity(from) });
+    if (result.result === "NEED_PHONE") {
+      pending.set(from.id, { kind: "login", code, at: Date.now() });
+      await ctx.reply(confirmText(result), { reply_markup: phoneKeyboard() });
+      return;
+    }
+    await ctx.reply(confirmText(result), result.result === "OK" ? openAppMarkup() : {});
     return;
   }
 
-  const code = payload.slice("login_".length);
-  const result = await api.confirmLogin({ code, telegramId: String(ctx.from!.id) });
-  if (result.result === "NEED_PHONE") {
-    pending.set(ctx.from!.id, { code, at: Date.now() });
-    await ctx.reply(confirmText(result), { reply_markup: phoneKeyboard() });
+  if (payload.startsWith("join_")) {
+    const code = payload.slice("join_".length);
+    const result = await api.joinFamily({ code, ...identity(from) });
+    if (result.result === "NEED_PHONE") {
+      pending.set(from.id, { kind: "join", code, at: Date.now() });
+      await ctx.reply(joinText(result), { reply_markup: phoneKeyboard() });
+      return;
+    }
+    await ctx.reply(joinText(result), result.result === "OK" ? openAppMarkup() : {});
     return;
   }
-  await ctx.reply(confirmText(result), result.result === "OK" ? openAppMarkup() : {});
+
+  await ctx.reply(TEXT.welcome, openAppMarkup());
 });
 
 bot.on("message:contact", async (ctx) => {
@@ -65,9 +84,13 @@ bot.on("message:contact", async (ctx) => {
     return;
   }
 
-  const result = await api.confirmLogin({ code: entry.code, telegramId: String(ctx.from.id), phone: contact.phone_number });
-  await ctx.reply(confirmText(result), { reply_markup: { remove_keyboard: true } });
-  if (result.result === "OK" && canLinkApp) await ctx.reply("👇", openAppMarkup());
+  const who = identity(ctx.from, contact.phone_number);
+  const { text, ok } =
+    entry.kind === "login"
+      ? await api.confirmLogin({ code: entry.code, ...who }).then((r) => ({ text: confirmText(r), ok: r.result === "OK" }))
+      : await api.joinFamily({ code: entry.code, ...who }).then((r) => ({ text: joinText(r), ok: r.result === "OK" }));
+  await ctx.reply(text, { reply_markup: { remove_keyboard: true } });
+  if (ok && canLinkApp) await ctx.reply("👇", openAppMarkup());
 });
 
 bot.command("sos", async (ctx) => {

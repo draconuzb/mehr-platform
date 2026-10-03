@@ -288,11 +288,16 @@ model User {
   gender     Gender?
   regionId   Int?
   region     Region?    @relation("UserRegion", fields: [regionId], references: [id])
+  // Telegram'dan olingan ism — onboarding'da avtomatik to'ldirish uchun
+  tgFirstName String?
+  tgLastName  String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   deletedAt  DateTime?
 
   sessions            Session[]
+  onboardingDraft     OnboardingDraft?
+  memberInvites       FamilyInvite[]
   loginRequests       LoginRequest[]
   staffRegions        StaffRegion[]
   youthProfile        YouthProfile?
@@ -381,6 +386,30 @@ model StaffRegion {
 
 // ─────────────────────────── Profillar ───────────────────────────
 
+// Onboarding qoralamasi: har qadam avtomatik saqlanadi, yakunda haqiqiy profil yaratiladi
+model OnboardingDraft {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  step      String?
+  data      Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
+// Oilaning boshqa katta a'zosini Telegram deep-link orqali taklif qilish
+model FamilyInvite {
+  id          String    @id @default(uuid()) @db.Uuid
+  codeHash    String    @unique
+  familyId    String    @db.Uuid
+  family      Family    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  memberId    String    @db.Uuid
+  member      FamilyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdById String    @db.Uuid
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+}
+
 model YouthProfile {
   userId       String            @id @db.Uuid
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -453,6 +482,7 @@ model Family {
   matches       Match[]
   matchScores   MatchScore[]
   homeVisits    HomeVisit[]
+  invites       FamilyInvite[]
 
   @@index([cityId, visibility])
 }
@@ -471,6 +501,7 @@ model FamilyMember {
   occupation   String?
   livesInHouse Boolean    @default(true)
   createdAt    DateTime   @default(now())
+  invites      FamilyInvite[]
 
   @@index([familyId])
 }

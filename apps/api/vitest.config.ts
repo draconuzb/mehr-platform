@@ -23,6 +23,7 @@ export default defineConfig({
       BOT_INTERNAL_SECRET: "test-internal-secret-123456",
       NODE_ENV: "test",
       AUTH_START_LIMIT_PER_MIN: "1000",
+      FIELD_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
     },
     fileParallelism: false,
   },

@@ -17,4 +17,10 @@ export default async function setup() {
     env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL },
     stdio: "pipe",
   });
+  // Ma'lumotnomalar (hududlar, shaharlar, teglar) — idempotent
+  execSync("pnpm exec tsx prisma/seed.ts", {
+    cwd: resolve(__dirname, "../../../packages/db"),
+    env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL },
+    stdio: "pipe",
+  });
 }

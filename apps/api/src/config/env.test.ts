@@ -8,6 +8,7 @@ const base = {
   ADMIN_ORIGIN: "http://localhost:3001",
   JWT_ACCESS_SECRET: "change-me-access",
   BOT_INTERNAL_SECRET: "change-me-bot-internal",
+  FIELD_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString("base64"),
 };
 
 const prod = {

@@ -10,6 +10,6 @@ import { TelegramLoginService } from "./telegram-login.service";
 @Module({
   controllers: [AuthController, InternalTelegramController],
   providers: [AccessTokenService, SessionService, TelegramLoginService, AuthGuard, InternalSecretGuard],
-  exports: [AccessTokenService, SessionService, AuthGuard],
+  exports: [AccessTokenService, SessionService, AuthGuard, InternalSecretGuard, TelegramLoginService],
 })
 export class AuthModule {}

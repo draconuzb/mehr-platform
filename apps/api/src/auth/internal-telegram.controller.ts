@@ -9,6 +9,8 @@ const ConfirmBody = z.object({
   code: z.string().regex(/^[A-Za-z0-9_-]{20,64}$/),
   telegramId: z.union([z.string().regex(/^\d{1,20}$/), z.number().int().positive()]).transform((v) => BigInt(v)),
   phone: z.string().max(32).optional(),
+  firstName: z.string().max(64).optional(),
+  lastName: z.string().max(64).optional(),
 });
 
 /** Faqat Telegram bot chaqiradi (X-Internal-Secret bilan) */

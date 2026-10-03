@@ -1,73 +1,9 @@
-import "reflect-metadata";
-import type { INestApplication } from "@nestjs/common";
-import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { PrismaClient } from "@mehr/db";
-import { AppModule } from "../src/app.module";
-import { loadEnv } from "../src/config/env";
-import { configureApp } from "../src/setup";
+import { api, codeFrom, confirm, login, prisma, refreshCookie, resetUsers, startApp, stopApp } from "./helpers";
 
-const SECRET = "test-internal-secret-123456";
-const prisma = new PrismaClient();
-let app: INestApplication;
-let base: string;
-
-async function api(path: string, init: RequestInit & { json?: unknown } = {}) {
-  const headers = new Headers(init.headers);
-  if (init.json !== undefined) headers.set("content-type", "application/json");
-  const res = await fetch(`${base}/v1${path}`, {
-    ...init,
-    headers,
-    body: init.json !== undefined ? JSON.stringify(init.json) : init.body,
-  });
-  const text = await res.text();
-  return { status: res.status, body: text ? JSON.parse(text) : null, headers: res.headers };
-}
-
-const confirm = (json: unknown, secret = SECRET) =>
-  api("/internal/telegram/login-confirm", { method: "POST", json, headers: { "x-internal-secret": secret } });
-
-function codeFrom(deepLink: string): string {
-  const m = /start=login_([A-Za-z0-9_-]+)$/.exec(deepLink);
-  if (!m?.[1]) throw new Error(`deep-link noto'g'ri: ${deepLink}`);
-  return m[1];
-}
-
-function refreshCookie(headers: Headers): string {
-  const raw = headers.getSetCookie().find((c) => c.startsWith("mehr_rt="));
-  if (!raw) throw new Error("refresh cookie yo'q");
-  return raw.split(";")[0]!;
-}
-
-/** To'liq kirish: start → bot tasdiqlaydi → poll */
-async function login(telegramId: string, phone?: string) {
-  const start = await api("/auth/telegram/start", { method: "POST" });
-  const code = codeFrom(start.body.deepLink);
-  const c = await confirm({ code, telegramId, phone });
-  const poll = await api("/auth/telegram/poll", { method: "POST", json: { loginId: start.body.loginId, pollToken: start.body.pollToken } });
-  return { start, code, confirm: c, poll };
-}
-
-beforeAll(async () => {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  app = moduleRef.createNestApplication();
-  configureApp(app, loadEnv());
-  await app.listen(0);
-  base = await app.getUrl();
-  base = base.replace("[::1]", "localhost");
-});
-
-beforeEach(async () => {
-  // AuditLog trigger'i UPDATE/DELETE ni bloklaydi, TRUNCATE esa test bazasini tozalash uchun ishlaydi
-  await prisma.$executeRawUnsafe(
-    'TRUNCATE "AuditLog", "LoginRequest", "Session", "User" RESTART IDENTITY CASCADE',
-  );
-});
-
-afterAll(async () => {
-  await app?.close();
-  await prisma.$disconnect();
-});
+beforeAll(startApp);
+beforeEach(resetUsers);
+afterAll(stopApp);
 
 describe("Telegram orqali kirish", () => {
   it("yangi foydalanuvchi: raqam so'raladi, keyin ro'yxatdan o'tadi va kiradi", async () => {

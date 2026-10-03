@@ -8,11 +8,20 @@ import { normalizePhone, randomToken, safeEqualHex, sha256 } from "./tokens";
 
 export const LOGIN_START_PREFIX = "login_";
 
-export interface ConfirmInput {
-  code: string;
+export interface TelegramIdentity {
   telegramId: bigint;
   phone?: string;
+  firstName?: string;
+  lastName?: string;
 }
+
+export interface ConfirmInput extends TelegramIdentity {
+  code: string;
+}
+
+export type ResolveResult =
+  | { ok: true; user: User; isNew: boolean }
+  | { ok: false; result: "NEED_PHONE" | "INVALID_PHONE" | "PHONE_TAKEN" | "BLOCKED" };
 
 export type ConfirmResult =
   | { result: "OK"; isNew: boolean }
@@ -68,32 +77,9 @@ export class TelegramLoginService {
     const req = await this.prisma.loginRequest.findUnique({ where: { codeHash: sha256(input.code) } });
     if (!req || req.status !== "PENDING" || req.expiresAt < new Date()) return { result: "EXPIRED" };
 
-    let user = await this.prisma.user.findUnique({ where: { telegramId: input.telegramId } });
-    let isNew = false;
-
-    if (!user) {
-      if (!input.phone) return { result: "NEED_PHONE" };
-      const phone = normalizePhone(input.phone);
-      if (!phone) return { result: "INVALID_PHONE" };
-
-      const byPhone = await this.prisma.user.findUnique({ where: { phone } });
-      if (byPhone) {
-        // Raqam boshqa Telegram akkauntiga bog'langan bo'lsa — qayta bog'lamaymiz (akkauntni egallab olishning oldini olish)
-        if (byPhone.telegramId !== null) return { result: "PHONE_TAKEN" };
-        user = await this.prisma.user.update({ where: { id: byPhone.id }, data: { telegramId: input.telegramId } });
-      } else {
-        try {
-          user = await this.prisma.user.create({ data: { phone, telegramId: input.telegramId } });
-          isNew = true;
-        } catch (e) {
-          // Parallel so'rov xuddi shu raqam yoki Telegram ID bilan foydalanuvchi yaratib ulgurgan
-          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { result: "PHONE_TAKEN" };
-          throw e;
-        }
-      }
-    }
-
-    if (BLOCKED_STATUSES.has(user.status)) return { result: "BLOCKED" };
+    const resolved = await this.resolveUser(input);
+    if (!resolved.ok) return { result: resolved.result };
+    const { user, isNew } = resolved;
 
     const updated = await this.prisma.loginRequest.updateMany({
       where: { id: req.id, status: "PENDING" },
@@ -108,6 +94,46 @@ export class TelegramLoginService {
       entityId: req.id,
     });
     return { result: "OK", isNew };
+  }
+
+  /**
+   * Telegram ID bo'yicha foydalanuvchini topadi yoki (tasdiqlangan raqam bilan) yaratadi.
+   * Login va oilaga qo'shilish oqimlari uchun umumiy.
+   */
+  async resolveUser(input: TelegramIdentity): Promise<ResolveResult> {
+    const names = {
+      tgFirstName: input.firstName?.slice(0, 64) || undefined,
+      tgLastName: input.lastName?.slice(0, 64) || undefined,
+    };
+    let user = await this.prisma.user.findUnique({ where: { telegramId: input.telegramId } });
+    let isNew = false;
+
+    if (!user) {
+      if (!input.phone) return { ok: false, result: "NEED_PHONE" };
+      const phone = normalizePhone(input.phone);
+      if (!phone) return { ok: false, result: "INVALID_PHONE" };
+
+      const byPhone = await this.prisma.user.findUnique({ where: { phone } });
+      if (byPhone) {
+        // Raqam boshqa Telegram akkauntiga bog'langan bo'lsa — qayta bog'lamaymiz (akkauntni egallab olishning oldini olish)
+        if (byPhone.telegramId !== null) return { ok: false, result: "PHONE_TAKEN" };
+        user = await this.prisma.user.update({ where: { id: byPhone.id }, data: { telegramId: input.telegramId, ...names } });
+      } else {
+        try {
+          user = await this.prisma.user.create({ data: { phone, telegramId: input.telegramId, ...names } });
+          isNew = true;
+        } catch (e) {
+          // Parallel so'rov xuddi shu raqam yoki Telegram ID bilan foydalanuvchi yaratib ulgurgan
+          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return { ok: false, result: "PHONE_TAKEN" };
+          throw e;
+        }
+      }
+    } else if (names.tgFirstName && names.tgFirstName !== user.tgFirstName) {
+      user = await this.prisma.user.update({ where: { id: user.id }, data: names });
+    }
+
+    if (BLOCKED_STATUSES.has(user.status)) return { ok: false, result: "BLOCKED" };
+    return { ok: true, user, isNew };
   }
 
   /** 3-qadam (sayt): tasdiqlangan so'rovni bir martalik iste'mol qiladi */
