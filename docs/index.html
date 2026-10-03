@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Mehr prototipi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: chap — ekranlar ro'yxati (prototip navigatori), markaz — telefon ramkasi yoki desktop admin oynasi */
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --surface-2:#F3F6F5; --ink:#13222A; --muted:#5A6A71; --line:#D9E1E0;
+  --accent:#0E6B75; --accent-ink:#FFFFFF; --accent-soft:#D5EAEA;
+  --saffron:#B57A0C; --saffron-soft:#F7EBD0;
+  --danger:#BE342D; --danger-soft:#F8DDDA; --ok:#2B7A4C; --ok-soft:#DBEFE2;
+  --frame:#0D181E;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Golos Text", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1317; --surface:#132027; --surface-2:#192830; --ink:#E4EDEF; --muted:#91A3AA; --line:#25353D;
+  --accent:#4DB8C2; --accent-ink:#04262A; --accent-soft:#163A3E;
+  --saffron:#E2AE48; --saffron-soft:#372C13;
+  --danger:#F0807A; --danger-soft:#3C1D1B; --ok:#62C690; --ok-soft:#173526;
+  --frame:#000000; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0B1317; --surface:#132027; --surface-2:#192830; --ink:#E4EDEF; --muted:#91A3AA; --line:#25353D;
+  --accent:#4DB8C2; --accent-ink:#04262A; --accent-soft:#163A3E;
+  --saffron:#E2AE48; --saffron-soft:#372C13;
+  --danger:#F0807A; --danger-soft:#3C1D1B; --ok:#62C690; --ok-soft:#173526;
+  --frame:#000000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:100%}
+.nav{border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:18px;background:var(--surface)}
+.brand{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:-.02em;display:flex;align-items:baseline;gap:8px}
+.brand small{font-family:var(--f-body);font-weight:500;font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.nav h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.nav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.nav li button{width:100%;text-align:left;border:0;background:none;padding:6px 8px;border-radius:6px;display:flex;gap:8px;align-items:baseline}
+.nav li button .n{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;width:18px}
+.nav li button:hover{background:var(--surface-2)}
+.nav li button[aria-current="true"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.toggle{display:flex;gap:8px;align-items:flex-start;padding:10px;border:1px dashed var(--line);border-radius:8px;font-size:13px}
+.toggle input{margin-top:3px}
+.navsel{display:none}
+.groups{display:flex;flex-direction:column;gap:14px}
+
+.stage{display:flex;flex-direction:column;align-items:center;gap:16px;padding-block:28px;padding-inline:16px;min-width:0}
+.caption{max-width:560px;text-align:center}
+.caption h1{font-family:var(--f-display);font-size:22px;margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
+.caption p{margin:0;color:var(--muted)}
+
+.phone{width:370px;max-width:100%;height:760px;border:11px solid var(--frame);border-radius:44px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 60px -30px rgba(0,0,0,.35)}
+.desk{width:min(100%,1000px);height:640px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;display:flex;box-shadow:0 30px 60px -30px rgba(0,0,0,.3)}
+
+/* Ilova ichidagi elementlar */
+.hdr{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line);flex:none}
+.hdr .t{font-family:var(--f-display);font-weight:700;font-size:19px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr .t small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
+.ib{border:0;background:none;padding:4px 6px;border-radius:6px;font-size:16px}
+.sos{border:0;background:var(--danger);color:#fff;font-weight:700;font-size:12px;letter-spacing:.06em;padding:5px 10px;border-radius:999px}
+.content{flex:1;overflow-y:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.tabs{display:flex;border-top:1px solid var(--line);flex:none;background:var(--surface)}
+.tabs button{flex:1;border:0;background:none;padding:9px 0 11px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--muted)}
+.tabs button .i{font-size:18px;filter:grayscale(1);opacity:.7}
+.tabs button[aria-current="true"]{color:var(--accent);font-weight:600}
+.tabs button[aria-current="true"] .i{filter:none;opacity:1}
+.tabs button[disabled]{opacity:.4;cursor:not-allowed}
+
+.btn{border:0;border-radius:10px;padding:12px 14px;font-weight:600;background:var(--accent);color:var(--accent-ink);width:100%}
+.btn.sec{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost{background:none;color:var(--accent);padding:8px}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px}
+.row>*{flex:1;min-width:0}
+.muted{color:var(--muted)}
+.sm{font-size:12px}
+h2.s{font-family:var(--f-display);font-size:17px;margin:0;letter-spacing:-.01em}
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:0}
+
+.card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);text-align:left;padding:0;width:100%}
+.card .b{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px}
+.ph{background:
+   repeating-linear-gradient(135deg, var(--accent-soft) 0 10px, transparent 10px 20px),
+   linear-gradient(var(--saffron-soft), var(--saffron-soft));
+   display:flex;align-items:flex-end;justify-content:flex-start;color:var(--muted);font-size:11px;padding:8px;position:relative}
+.ph .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:.35;transform:rotate(-18deg);letter-spacing:.1em}
+.ttl{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ttl b{font-family:var(--f-display);font-size:16px}
+.pct{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 8px;border-radius:999px;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:4px 10px;font-size:12.5px}
+button.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.why{font-size:12.5px;color:var(--ink)}
+.why::before{content:"✦ ";color:var(--saffron)}
+.badge{display:inline-flex;gap:4px;align-items:center;font-size:12px;color:var(--saffron);font-weight:600}
+.banner{border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center;background:var(--accent-soft)}
+.banner.warn{background:var(--saffron-soft)}
+.banner.bad{background:var(--danger-soft);color:var(--danger)}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.list>*{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.list>*:last-child{border-bottom:0}
+.st-ok{color:var(--ok)} .st-warn{color:var(--saffron)} .st-bad{color:var(--danger)}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.inp{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;font:inherit;color:var(--ink);width:100%}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface-2);padding:9px 6px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent)}
+.scale{display:flex;align-items:center;gap:8px;font-size:12px}
+.scale input{flex:1;accent-color:var(--accent)}
+
+/* Chat */
+.chat{display:flex;flex-direction:column;gap:8px}
+.msg{max-width:78%;padding:8px 11px;border-radius:14px;font-size:13.5px}
+.msg .who{font-size:11px;font-weight:600;color:var(--accent);display:block;margin-bottom:2px}
+.msg.in{background:var(--surface-2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.out{background:var(--accent);color:var(--accent-ink);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.held{background:var(--saffron-soft);color:var(--ink);align-self:flex-end;border:1px dashed var(--saffron)}
+.msg .tm{display:block;text-align:right;font-size:10px;opacity:.7;margin-top:2px}
+.composer{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line);flex:none;align-items:center}
+.composer .inp{border-radius:999px;padding:9px 14px}
+
+/* Stepper */
+.steps{display:flex;flex-direction:column;gap:0}
+.steps li{list-style:none;display:grid;grid-template-columns:22px 1fr auto;gap:10px;padding:7px 0;position:relative;align-items:center}
+.steps .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);background:var(--surface);justify-self:center}
+.steps .done .dot{background:var(--ok);border-color:var(--ok)}
+.steps .cur .dot{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.steps .cur{font-weight:600}
+.steps ol{margin:0;padding:0}
+
+.sosbtn{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:16px;text-align:left;font-size:15px;font-weight:600;display:flex;gap:12px;align-items:center;width:100%}
+.sosbtn[aria-pressed="true"]{border-color:var(--danger);background:var(--danger-soft);color:var(--danger)}
+
+/* Admin */
+.aside{width:200px;flex:none;border-right:1px solid var(--line);padding:16px 10px;display:flex;flex-direction:column;gap:2px;background:var(--surface-2)}
+.aside .brand{font-size:18px;padding:0 8px 12px}
+.aside button{border:0;background:none;text-align:left;padding:7px 10px;border-radius:6px;display:flex;justify-content:space-between;font-size:13px}
+.aside button[aria-current="true"]{background:var(--accent-soft);font-weight:600}
+.aside .cnt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+.aside .cnt.hot{color:var(--danger);font-weight:700}
+.amain{flex:1;min-width:0;display:flex;flex-direction:column}
+.atop{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);gap:10px}
+.atop h3{margin:0;font-family:var(--f-display);font-size:19px}
+.abody{flex:1;overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:18px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.tile .v{font-family:var(--f-display);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile.hot{border-color:var(--danger);background:var(--danger-soft)}
+.tile.hot .v{color:var(--danger)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+.funnel{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.funnel div{display:grid;grid-template-columns:80px 50px 1fr;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.funnel span.bar{height:10px;border-radius:3px;background:var(--accent)}
+.split{display:grid;grid-template-columns:260px minmax(0,1fr);flex:1;min-height:0}
+.q{border-right:1px solid var(--line);overflow:auto}
+.q button{display:flex;justify-content:space-between;width:100%;border:0;border-bottom:1px solid var(--line);background:none;padding:12px 16px;text-align:left}
+.q button[aria-current="true"]{background:var(--accent-soft);font-weight:600}
+.doc{display:grid;grid-template-columns:140px 1fr;gap:8px 12px;align-items:center}
+.docph{height:56px;border-radius:8px}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .nav{border-right:0;border-bottom:1px solid var(--line);padding:14px 16px;gap:10px}
+  .nav .groups{display:none}
+  .navsel{display:block}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .split{grid-template-columns:1fr}
+  .q{max-height:160px;border-right:0;border-bottom:1px solid var(--line)}
+  .aside{display:none}
+}
+@media (max-width:480px){
+  .phone{border-width:6px;border-radius:28px;height:700px}
+  .stage{padding-block:16px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .content,.abody{animation:in .18s ease-out}
+  @keyframes in{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <nav class="nav" aria-label="Ekranlar">
+    <div class="brand">Mehr <small>prototip v1</small></div>
+    <select class="inp navsel" id="navsel" aria-label="Ekranni tanlash"></select>
+    <div class="groups" id="groups"></div>
+    <label class="toggle" for="minor"><input type="checkbox" id="minor"> <span><b>14–17 rejimi (v2)</b><br><span class="muted sm">Chatda ota-ona banneri, kelishuvda ota-ona imzosi</span></span></label>
+  </nav>
+  <main class="stage">
+    <div class="caption"><h1 id="cap-t"></h1><p id="cap-d"></p></div>
+    <div id="frame"></div>
+  </main>
+</div>
+
+<script>
+const S = {
+  screen: "landing",
+  used: 2, daily: 5,
+  sent: new Set(),
+  tags: new Set(["IT","Futbol","Oshpazlik"]),
+  skills: new Set(["Repetitorlik","Uy ishlari"]),
+  role: "youth", gender: null,
+  incoming: [{id:"aliyev",name:"Aliyevlar oilasi",pct:81,ago:"2 kun oldin"},{id:"saidov",name:"Saidovlar oilasi",pct:74,ago:"5 kun oldin · 9 kun qoldi"}],
+  msgs: [
+    {k:"in",who:"Rustam aka (ota)",t:"Assalomu alaykum, Aziz! Shanba kuni bo'shmisiz? Uyda osh qilamiz.",tm:"10:12"},
+    {k:"out",t:"Va alaykum assalom! Ha, bo'shman 🙂",tm:"10:15"},
+    {k:"in",who:"Dilnoza opa (ona)",t:"▶ ━━━━━━━━ 0:23  ·  ovozli xabar",tm:"10:21"},
+  ],
+  check: {m3:false, weekend:false},
+  trial: null, agree:false, signed:false, sos:null, sosSent:false,
+  minor:false, adminSel:0,
+};
+
+const FAMS = [
+  {id:"karimov",name:"Karimovlar oilasi",pct:87,dist:"Yunusobod",offer:["🏠 Yashash","🎓 Mentorlik"],why:["Umumiy qiziqishlar: IT, futbol","Ikkalangiz ham erta turasiz"],succ:2},
+  {id:"aliyev",name:"Aliyevlar oilasi",pct:81,dist:"Chilonzor",offer:["🎓 Mentorlik","💰 Yordam"],why:["Onasi oshpaz — oshpazlik bo'yicha mentorlik","Uyda o'zbek tilida"],succ:0},
+  {id:"saidov",name:"Saidovlar oilasi",pct:74,dist:"Mirzo Ulug'bek",offer:["🏠 Yashash"],why:["Farzandlari katta bo'lib ketgan, uy tinch","Siz ham tinch muhitni xohlaysiz"],succ:1},
+];
+
+const SCREENS = [
+  {g:"Ochiq qism", id:"landing", n:1, t:"Landing", d:"Mehmon ko'radigan bosh sahifa. Profillar bu yerda ko'rinmaydi."},
+  {g:"Ochiq qism", id:"ios", n:2, t:"iOS'ga o'rnatish", d:"iOS Safari'da avtomatik o'rnatish oynasi yo'q, shuning uchun ko'rsatma beriladi."},
+  {g:"Onboarding", id:"login", n:3, t:"Kirish", d:"Telefon + SMS kod yoki Telegram orqali."},
+  {g:"Onboarding", id:"quick", n:4, t:"Rol va tez profil", d:"Familiya va o'qish joyi juftlikdan keyingina ochiladi."},
+  {g:"Onboarding", id:"survey", n:5, t:"So'rovnoma", d:"Teglarni bosib ko'ring — moslik algoritmi shu ma'lumotlardan foydalanadi."},
+  {g:"Onboarding", id:"pending", n:6, t:"Verifikatsiya kutilmoqda", d:"Tekshiruv tugamaguncha Bosh va Qidiruv tablari qulflangan."},
+  {g:"Yosh ilovasi", id:"home", n:7, t:"Bosh — tavsiyalar", d:"Kartochkalar lentasi: foiz va sabablar. Kartochkani bosing."},
+  {g:"Yosh ilovasi", id:"family", n:8, t:"Oila profili", d:"Qiziqish bildiring — kunlik limit kamayadi."},
+  {g:"Yosh ilovasi", id:"interests", n:9, t:"Qiziqishlar", d:"Kiruvchi qiziqishni qabul qilsangiz, juftlik paydo bo'ladi."},
+  {g:"Yosh ilovasi", id:"chat", n:10, t:"Chat", d:"Telefon raqami, @username yoki havola yozib ko'ring — xabar ushlanadi."},
+  {g:"Yosh ilovasi", id:"match", n:11, t:"Juftlik sahifasi", d:"Sinov davri checklisti va ikki tomonlama qaror."},
+  {g:"Yosh ilovasi", id:"agreement", n:12, t:"Kelishuv", d:"Rozilik belgisi → SMS kod bilan imzo."},
+  {g:"Yosh ilovasi", id:"sos", n:13, t:"SOS", d:"Har bir ekranning yuqorisidagi SOS tugmasi shu yerga olib keladi."},
+  {g:"Oila ilovasi", id:"members", n:14, t:"Oila a'zolari", d:"Har bir katta a'zoning o'z logini va hujjatlari bor. Limitlar ko'rinib turadi."},
+  {g:"Xodimlar paneli", id:"admin", n:15, t:"Admin: dashboard", d:"Desktop panel, alohida domenda. SOS taymeri bilan."},
+  {g:"Xodimlar paneli", id:"verify", n:16, t:"Admin: verifikatsiya", d:"Hujjatni ochish uchun sabab tanlanadi — auditga yoziladi."},
+];
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function hdr(title, o={}){
+  return `<div class="hdr">
+    ${o.back ? `<button class="ib" data-go="${o.back}" aria-label="Orqaga">←</button>` : ""}
+    <div class="t">${title}${o.sub ? `<small>${o.sub}</small>` : ""}</div>
+    ${o.right || ""}
+    ${o.nobell ? "" : `<button class="ib" aria-label="Bildirishnomalar">🔔</button>`}
+    ${o.nosos ? "" : `<button class="sos" data-go="sos">SOS</button>`}
+  </div>`;
+}
+function tabs(active, locked){
+  const T=[["home","🏠","Bosh"],["search","🔍","Qidiruv"],["interests","💛","Qiziqish"],["chatlist","💬","Chat"],["profile","👤","Profil"]];
+  return `<div class="tabs">${T.map(([id,i,l])=>{
+    const lock = locked && (id==="home"||id==="search");
+    return `<button data-go="${id}" ${active===id?'aria-current="true"':""} ${lock?"disabled":""}><span class="i">${lock?"🔒":i}</span>${l}</button>`;}).join("")}</div>`;
+}
+const phone = (inner) => `<div class="phone">${inner}</div>`;
+const famCard = f => `<button class="card" data-go="family">
+  <div class="ph" style="height:130px"><span class="wm">MEHR · ID 4821</span>oila rasmi</div>
+  <div class="b">
+    <div class="ttl"><b>${f.name}</b><span class="pct">${f.pct}%</span></div>
+    <span class="muted sm">Toshkent · ${f.dist}</span>
+    <div class="chips">${f.offer.map(o=>`<span class="chip">${o}</span>`).join("")}</div>
+    ${f.why.map(w=>`<span class="why">${w}</span>`).join("")}
+    ${f.succ?`<span class="badge">★ ${f.succ} ta muvaffaqiyatli juftlik</span>`:""}
+  </div></button>`;
+
+const R = {
+landing(){ return phone(`
+  <div class="hdr"><div class="t">Mehr</div><button class="chip">UZ ▾</button><button class="btn" style="width:auto;padding:7px 12px" data-go="login">Kirish</button></div>
+  <div class="content">
+    <h2 style="font-family:var(--f-display);font-size:30px;line-height:1.08;margin:6px 0 0;letter-spacing:-.02em;text-wrap:balance">Yangi shaharda ikkinchi oilang bor.</h2>
+    <p class="muted" style="margin:0">Boshqa viloyatdan o'qishga kelgan yoshlar va yordam bermoqchi bo'lgan oilalarni xavfsiz tanishtiramiz.</p>
+    <div class="row"><button class="btn" data-go="login">Men yoshman</button><button class="btn sec" data-go="login">Biz oilamiz</button></div>
+    <p class="sec-title">Qanday ishlaydi</p>
+    <div class="list">
+      <div><b>1</b> Profil va hujjatlar tekshiruvi</div>
+      <div><b>2</b> Mos oila yoki yoshni topish</div>
+      <div><b>3</b> Fond ishtirokida tanishuv</div>
+    </div>
+    <p class="sec-title">Xavfsizlik</p>
+    <div class="list">
+      <div><span class="st-ok">✓</span> Har bir oila a'zosi tekshiriladi</div>
+      <div><span class="st-ok">✓</span> Sudlanmaganlik ma'lumotnomasi majburiy</div>
+      <div><span class="st-ok">✓</span> Birinchi uchrashuv fond ofisida</div>
+      <div><span class="st-ok">✓</span> SOS — kecha-kunduz</div>
+    </div>
+    <div class="banner"><div><b style="font-family:var(--f-display);font-size:22px">312</b> juftlik · <b style="font-family:var(--f-display);font-size:22px">14</b> hudud<br><span class="muted sm">Namuna raqamlar</span></div></div>
+    <button class="btn sec" data-go="ios">📲 Telefonga o'rnatish</button>
+  </div>`);},
+
+ios(){ return phone(`${hdr("Mehr'ni o'rnatish",{back:"landing",nobell:1,nosos:1})}
+  <div class="content">
+    <p style="margin:0">Mehr — veb-ilova. App Store kerak emas.</p>
+    <div class="list">
+      <div><b>1</b> Safari'da pastdagi <span class="chip">⬆︎ Ulashish</span> tugmasini bosing</div>
+      <div><b>2</b> <span class="chip">Bosh ekranga qo'shish</span> ni tanlang</div>
+      <div><b>3</b> <span class="chip">Qo'shish</span> — tayyor</div>
+    </div>
+    <div class="ph" style="height:180px;border-radius:12px">ekran rasmi: Ulashish menyusi</div>
+    <div class="banner warn"><span>ℹ️</span><span class="sm">iPhone'da bildirishnomalar faqat ilova o'rnatilgandan keyin keladi. Hech narsani o'tkazib yubormaslik uchun Telegram botni ulang.</span></div>
+    <button class="btn">✈ Telegram botni ulash</button>
+    <button class="btn ghost" data-go="landing">Keyinroq</button>
+  </div>`);},
+
+login(){ return phone(`${hdr("Kirish",{back:"landing",nobell:1,nosos:1})}
+  <div class="content">
+    <h2 class="s">Kirish yoki ro'yxatdan o'tish</h2>
+    <div class="field"><label for="ph">Telefon raqam</label><input class="inp" id="ph" value="+998 90 123 45 67" inputmode="tel"></div>
+    <button class="btn" data-act="otp">SMS kod olish</button>
+    <div id="otpbox" ${S.otp?"":"hidden"} class="field"><label for="otp">SMS kod (namuna: 123456)</label><input class="inp" id="otp" inputmode="numeric" maxlength="6" placeholder="••••••"><span class="muted sm">Qayta yuborish: 0:58</span><button class="btn" data-go="quick">Tasdiqlash</button></div>
+    <p class="muted sm" style="text-align:center;margin:0">yoki</p>
+    <button class="btn sec" data-go="quick">✈ Telegram orqali kirish</button>
+    <p class="muted sm" style="margin:0">Davom etsangiz, Oferta va Maxfiylik siyosatiga rozilik bildirasiz.</p>
+  </div>`);},
+
+quick(){ return phone(`${hdr("Profil",{back:"login",sub:"2-qadam, jami 6 ta",nobell:1,nosos:1})}
+  <div class="content">
+    <div class="progress"><i style="width:33%"></i></div>
+    <p class="sec-title">Siz kimsiz?</p>
+    <div class="seg"><button data-act="role" data-v="youth" aria-pressed="${S.role==="youth"}">Yoshman</button><button data-act="role" data-v="family" aria-pressed="${S.role==="family"}">Oilamiz</button></div>
+    <div class="row"><div class="field"><label for="fn">Ism</label><input class="inp" id="fn" value="Aziz"></div><div class="field"><label for="ln">Familiya</label><input class="inp" id="ln" value="Karimov"></div></div>
+    <div class="row"><div class="field"><label for="bd">Tug'ilgan sana</label><input class="inp" id="bd" value="14.03.2006"></div>
+      <div class="field"><label>Jins</label><div class="seg"><button data-act="gender" data-v="m" aria-pressed="${S.gender!=="f"}">Yigit</button><button data-act="gender" data-v="f" aria-pressed="${S.gender==="f"}">Qiz</button></div></div></div>
+    <div class="row"><div class="field"><label for="rg">Qayerdan</label><select class="inp" id="rg"><option>Xorazm</option><option>Qoraqalpog'iston</option><option>Surxondaryo</option></select></div>
+      <div class="field"><label for="ct">Hozir</label><select class="inp" id="ct"><option>Toshkent</option><option>Samarqand</option></select></div></div>
+    <div class="row"><div class="field"><label for="sc">O'qish joyi</label><select class="inp" id="sc"><option>OTM</option><option>Texnikum</option><option>Kollej</option><option>Litsey</option></select></div>
+      <div class="field"><label for="cr">Kurs</label><select class="inp" id="cr"><option>2</option><option>1</option><option>3</option></select></div></div>
+    <div class="field"><label for="fs">Yo'nalish</label><input class="inp" id="fs" value="Dasturiy injiniring"></div>
+    <div class="banner"><span>🔒</span><span class="sm">Familiyangiz va o'qish joyingiz faqat juftlikdan keyin ko'rinadi. Oilalar "Aziz K." deb ko'radi.</span></div>
+    <button class="btn" data-go="survey">Davom etish</button>
+  </div>`);},
+
+survey(){
+  const T=["IT","Futbol","Kitob","Musiqa","Oshpazlik","Shaxmat","Sayohat","Rasm chizish"];
+  const K=["Repetitorlik","Uy ishlari","Kompyuter","Ta'mirlash","Bog'dorchilik"];
+  return phone(`${hdr("O'zing haqingda",{back:"quick",sub:"4-qadam, jami 6 ta",nobell:1,nosos:1})}
+  <div class="content">
+    <div class="progress"><i style="width:66%"></i></div>
+    <p class="sec-title">Qiziqishlar · kamida 3 ta (${S.tags.size} ta tanlandi)</p>
+    <div class="chips">${T.map(t=>`<button class="chip" data-act="tag" data-v="${t}" aria-pressed="${S.tags.has(t)}">${t}</button>`).join("")}<button class="chip">+ boshqa</button></div>
+    <p class="sec-title">Nima qila olasan? · kamida 2 ta</p>
+    <div class="chips">${K.map(t=>`<button class="chip" data-act="skill" data-v="${t}" aria-pressed="${S.skills.has(t)}">${t}</button>`).join("")}</div>
+    <p class="sec-title">Xarakter</p>
+    <div class="scale"><span>Tinch</span><input type="range" id="s1" min="1" max="5" value="2" aria-label="Tinch yoki faol"><span>Faol</span></div>
+    <div class="scale"><span>Kamgap</span><input type="range" id="s2" min="1" max="5" value="3" aria-label="Kamgap yoki ochiq"><span>Ochiq</span></div>
+    <p class="sec-title">Kun tartibi</p>
+    <div class="seg"><button aria-pressed="true">Erta turaman</button><button aria-pressed="false">Kech yotaman</button></div>
+    <div class="seg"><button aria-pressed="false">Chekaman</button><button aria-pressed="true">Chekmayman</button></div>
+    <div class="row"><button class="btn sec" data-go="quick">Orqaga</button><button class="btn" data-go="pending" ${S.tags.size<3||S.skills.size<2?"disabled":""}>Davom etish</button></div>
+    <p class="muted sm" style="margin:0;text-align:center">Saqlandi ✓ · keyinroq davom ettirishingiz mumkin</p>
+  </div>`);},
+
+pending(){ return phone(`${hdr("Mehr")}
+  <div class="content">
+    <div class="banner warn"><span style="font-size:20px">⏳</span><div><b>Profilingiz tekshirilmoqda</b><br><span class="sm muted">Odatda 1–3 ish kuni</span></div></div>
+    <div class="list">
+      <div><span class="st-ok">✓</span> Telefon tasdiqlandi</div>
+      <div><span class="st-ok">✓</span> Profil to'ldirildi</div>
+      <div><span class="st-ok">✓</span> Rasmlar (4 ta) — moderatsiyada</div>
+      <div><span class="st-warn">!</span> <span style="flex:1">Tanishtiruv videosi</span><button class="chip">+ Yuklash</button></div>
+      <div><span class="st-warn">!</span> <span style="flex:1">Pasport / ID karta</span><button class="chip">+ Yuklash</button></div>
+      <div><span class="st-warn">!</span> <span style="flex:1">O'qish joyidan ma'lumotnoma</span><button class="chip">+ Yuklash</button></div>
+    </div>
+    <button class="btn">Hujjatlarni yuklash</button>
+    <button class="btn sec">✈ Telegram'ni ulash</button>
+    <button class="btn ghost" data-go="home">Prototip: tekshiruvdan o'tdi deb davom etish →</button>
+  </div>${tabs("profile",true)}`);},
+
+home(){ return phone(`${hdr("Mehr")}
+  <div class="content">
+    <button class="banner" data-go="match" style="border:0;text-align:left;width:100%"><span>📅</span><div style="flex:1"><b>Ertaga 15:00 — uchrashuv</b><br><span class="sm muted">Karimovlar · Fond ofisi, Yunusobod</span></div><span>›</span></button>
+    <h2 class="s">Sizga mos oilalar</h2>
+    ${FAMS.map(famCard).join("")}
+  </div>${tabs("home")}`);},
+
+search(){ return phone(`${hdr("Qidiruv")}
+  <div class="content">
+    <div class="chips"><span class="chip" style="background:var(--accent);color:var(--accent-ink)">Yashash</span><span class="chip">Mentorlik</span><span class="chip">Yordam</span><span class="chip">Bolali oila</span><span class="chip">Rus tilida</span></div>
+    <p class="muted sm" style="margin:0">Xavfsizlik filtrlari (shahar, allergiya, 14–17 qoidalari) har doim ishlaydi.</p>
+    ${FAMS.filter(f=>f.offer.includes("🏠 Yashash")).map(famCard).join("")}
+  </div>${tabs("search")}`);},
+
+family(){
+  const sent=S.sent.has("karimov"), left=S.daily-S.used;
+  return phone(`${hdr("",{back:"home",nobell:1,nosos:1,right:`<button class="ib sm" style="font-size:13px;color:var(--muted)">⋯ Shikoyat</button>`})}
+  <div class="content" style="padding-top:0">
+    <div class="ph" style="height:200px;margin-inline:-16px"><span class="wm">MEHR · ID 4821 · 03.10</span>rasm 1 / 5</div>
+    <div class="ttl"><b style="font-size:21px">Karimovlar oilasi</b><span class="pct">87%</span></div>
+    <span class="muted">Toshkent · Yunusobod tumani</span>
+    <button class="btn sec">▶ Oila videosi · 0:45</button>
+    <p class="sec-title">Nega mos?</p>
+    <span class="why">Umumiy qiziqishlar: IT, futbol</span>
+    <span class="why">Otasi dasturchi — IT bo'yicha mentorlik qila oladi</span>
+    <span class="why">Uyda o'zbek tilida gaplashishadi</span>
+    <p class="sec-title">Oila a'zolari</p>
+    <div class="list">
+      <div>👨 <span style="flex:1"><b>Rustam K.</b>, 48 · ota<br><span class="muted sm">Dasturchi</span></span></div>
+      <div>👩 <span style="flex:1"><b>Dilnoza K.</b>, 45 · ona<br><span class="muted sm">O'qituvchi</span></span></div>
+      <div>👧 <span style="flex:1">Farzand, 12 · qiz</span></div>
+    </div>
+    <p class="sec-title">Taklif</p>
+    <div class="chips"><span class="chip">🏠 Yashash</span><span class="chip">🎓 Mentorlik</span><span class="chip">💰 Ovqat, kurslar</span></div>
+    <p class="sec-title">Uy</p>
+    <span>Kvartira · alohida xona bor ✓</span>
+    <div class="row"><div class="ph" style="height:80px;border-radius:10px">xona</div><div class="ph" style="height:80px;border-radius:10px">xona</div></div>
+    <p class="sec-title">Uy qoidalari</p>
+    <div class="list"><div>22:00 gacha uyga qaytish</div><div>Uy ishlarida yordam berish</div><div>Mehmon chaqirish — oldindan kelishib</div></div>
+  </div>
+  <div style="padding:10px 16px;border-top:1px solid var(--line);flex:none;display:flex;flex-direction:column;gap:4px">
+    <button class="btn" data-act="interest" ${sent||left<=0?"disabled":""}>${sent?"✓ Qiziqish yuborildi":"💛 Qiziqish bildirish"}</button>
+    <span class="muted sm" style="text-align:center">Bugun: ${left} / ${S.daily} qoldi${left<=0?" · limit tugadi, ertaga yangilanadi":""}</span>
+  </div>`);},
+
+interests(){ return phone(`${hdr("Qiziqishlar",{right:`<span class="chip">Bugun ${S.used}/${S.daily}</span>`})}
+  <div class="content">
+    <div class="seg"><button aria-pressed="true">Kiruvchi ${S.incoming.length}</button><button aria-pressed="false">Yuborilgan ${S.sent.size}</button><button aria-pressed="false" data-go="match">Juftliklar 1</button></div>
+    ${S.incoming.length? S.incoming.map(f=>`<div class="card"><div class="b">
+      <div class="ttl"><b>${f.name}</b><span class="pct">${f.pct}%</span></div>
+      <span class="muted sm">${f.ago}</span>
+      <div class="row" style="margin-top:6px"><button class="btn sec" data-act="decline" data-v="${f.id}">Rad etish</button><button class="btn" data-act="accept" data-v="${f.id}">Qabul qilish</button></div>
+    </div></div>`).join("") : `<div class="banner"><span>💛</span><span>Yangi qiziqishlar yo'q. Ular kelganda Telegram orqali xabar beramiz.</span></div>`}
+    ${S.toast?`<div class="banner" style="background:var(--ok-soft)"><span>🤝</span><span>${S.toast}</span></div>`:""}
+    <p class="muted sm" style="margin:0">Javob berilmagan qiziqishlar 14 kundan keyin yopiladi.</p>
+  </div>${tabs("interests")}`);},
+
+chatlist(){ return phone(`${hdr("Chat")}
+  <div class="content">
+    <button class="card" data-go="chat"><div class="b" style="flex-direction:row;align-items:center;gap:12px">
+      <div class="ph" style="width:44px;height:44px;border-radius:50%;padding:0"></div>
+      <div style="flex:1;min-width:0"><b>Karimovlar</b><br><span class="muted sm">Dilnoza opa: ovozli xabar · 10:21</span></div>
+      <span class="chip">Sinov</span></div></button>
+  </div>${tabs("chatlist")}`);},
+
+chat(){ return phone(`${hdr("Karimovlar",{back:"chatlist",sub:"Sinov davri · 2-hafta",nobell:1,right:`<button class="ib" data-go="match" aria-label="Juftlik sahifasi">📅</button>`})}
+  ${S.minor?`<div class="banner" style="border-radius:0;flex:none"><span>👁</span><span class="sm">Ota-onangiz ham bu chatni ko'radi</span></div>`:""}
+  <div class="content"><div class="chat" id="chatbox">
+    ${S.msgs.map(m=>m.k==="held"
+      ? `<div class="msg held">${esc(m.t)}<span class="tm">⚠️ Xabar tekshiruvda: kontakt ma'lumoti aniqlandi. Moderator ko'rib chiqadi.</span></div>`
+      : `<div class="msg ${m.k}">${m.who?`<span class="who">${m.who}</span>`:""}${esc(m.t)}<span class="tm">${m.tm}${m.k==="out"?" ✓✓":""}</span></div>`).join("")}
+  </div></div>
+  <form class="composer" id="composer"><button type="button" class="ib" aria-label="Rasm">📷</button><input class="inp" id="msg" placeholder="Xabar yozing…" autocomplete="off"><button type="submit" class="ib" aria-label="Yuborish">➤</button></form>`);},
+
+match(){
+  const ok = S.check.m3 && S.check.weekend;
+  return phone(`${hdr("Karimovlar bilan",{back:"home",nobell:1})}
+  <div class="content">
+    <ol class="steps">
+      <li class="done"><span class="dot"></span>Juftlik<span class="muted sm">12.09</span></li>
+      <li class="done"><span class="dot"></span>Chat<span></span></li>
+      <li class="done"><span class="dot"></span>1-uchrashuv<span class="muted sm">18.09 · fond</span></li>
+      <li class="${S.trial==="go"?"done":"cur"}"><span class="dot"></span>Sinov davri<span class="muted sm">2 / 4 hafta</span></li>
+      <li class="${S.trial==="go"?"cur":""}"><span class="dot"></span>Kelishuv<span></span></li>
+      <li><span class="dot"></span>Faol munosabat<span></span></li>
+    </ol>
+    <p class="sec-title">Sinov davri checklisti</p>
+    <div class="list">
+      <label><input type="checkbox" checked disabled> 1-uchrashuv</label>
+      <label><input type="checkbox" checked disabled> 2-uchrashuv</label>
+      <label for="c3"><input type="checkbox" id="c3" data-act="chk" data-v="m3" ${S.check.m3?"checked":""}> <span style="flex:1">3-uchrashuv</span><span class="chip">Bron qilish</span></label>
+      <label for="c4"><input type="checkbox" id="c4" data-act="chk" data-v="weekend" ${S.check.weekend?"checked":""}> Dam olish kunini mehmonda o'tkazish</label>
+    </div>
+    ${S.trial==="go"
+      ? `<div class="banner" style="background:var(--ok-soft)"><span>✓</span><span>Javobingiz qabul qilindi. Oila ham "Davom etamiz" desa, kelishuv ochiladi.</span></div><button class="btn" data-go="agreement">Kelishuvni ko'rish</button>`
+      : S.trial==="stop"
+      ? `<div class="banner warn"><span>ℹ️</span><span>Javobingiz faqat fondga ko'rinadi. Koordinator siz bilan bog'lanadi.</span></div>`
+      : `<p class="sec-title">Sinov tugagach</p>
+         <div class="row"><button class="btn sec" data-act="trial" data-v="stop" ${ok?"":"disabled"}>To'xtatamiz</button><button class="btn" data-act="trial" data-v="go" ${ok?"":"disabled"}>Davom etamiz</button></div>
+         <p class="muted sm" style="margin:0">${ok?"Javobingizni oila ko'rmaydi.":"Checklist bajarilgach tugmalar ochiladi."}</p>`}
+    <div class="list"><div><span style="flex:1">Koordinator: <b>Malika S.</b></span><button class="chip">💬 Yozish</button></div></div>
+    <button class="btn danger">Munosabatni tugatish</button>
+  </div>`);},
+
+agreement(){
+  const sig = (n,ok)=>`<div><span class="${ok?"st-ok":"muted"}">${ok?"✓":"○"}</span> ${n}</div>`;
+  return phone(`${hdr("Kelishuv",{back:"match",nobell:1})}
+  <div class="content">
+    <div class="list">
+      <div><span class="muted" style="width:80px">Tomonlar</span>Aziz K. ↔ Karimovlar</div>
+      <div><span class="muted" style="width:80px">Turi</span>Yashash + Mentorlik</div>
+      <div><span class="muted" style="width:80px">Muddat</span>30.06.2028 gacha</div>
+    </div>
+    <div style="border:1px solid var(--line);border-radius:12px;padding:12px;max-height:170px;overflow:auto;font-size:13px;background:var(--surface-2)">
+      <b>1. Majburiyatlar.</b> Oila yoshga alohida xona va ovqat beradi; yosh uy qoidalariga rioya qiladi…<br>
+      <b>2. Uy qoidalari.</b> 22:00 gacha qaytish; uy ishlarida yordam; mehmon — kelishib…<br>
+      <b>3. Yordam turlari.</b> Ovqat, kurslar. Pul o'tkazmasi platforma orqali amalga oshirilmaydi.<br>
+      <b>4. Chiqib ketish.</b> Har bir tomon istalgan vaqtda munosabatni tugatishi mumkin…<br>
+      <b>5. Fond va SOS.</b> Koordinator: Malika S. SOS — ilovada va botda.
+    </div>
+    <p class="sec-title">Imzolar</p>
+    <div class="list">
+      ${sig("Rustam K.",true)}${sig("Dilnoza K.",true)}
+      ${S.minor?sig("Ota-ona: Shahnoza K.",S.signed):""}
+      ${sig("Aziz K. (siz)",S.signed)}
+      ${sig("Koordinator tasdig'i",false)}
+    </div>
+    ${S.signed
+      ? `<div class="banner" style="background:var(--ok-soft)"><span>✓</span><span>Imzolandi. Koordinator tasdiqlagach, munosabat faol bo'ladi va PDF Telegram'ga yuboriladi.</span></div>`
+      : `<label for="agr" style="display:flex;gap:8px"><input type="checkbox" id="agr" data-act="agree" ${S.agree?"checked":""}> O'qidim va roziman</label>
+         <button class="btn" data-act="sign" ${S.agree?"":"disabled"}>SMS kod bilan imzolash</button>`}
+  </div>`);},
+
+sos(){
+  const O=[["danger","🚨","Xavf ostidaman"],["leave","🚪","Hozir ketmoqchiman"],["talk","💬","Koordinator bilan gaplashmoqchiman"]];
+  return phone(`<div class="hdr"><button class="ib" data-go="home" aria-label="Yopish">✕</button><div class="t" style="color:var(--danger)">SOS</div></div>
+  <div class="content">
+    ${S.sosSent
+      ? `<div class="banner bad" style="flex-direction:column;align-items:flex-start;gap:6px"><b>Signal yuborildi</b><span class="sm">Navbatchi koordinator xabardor qilindi va siz bilan bog'lanadi. Prototipda haqiqiy signal yuborilmaydi.</span></div>
+         <button class="btn sec" data-act="sosreset">Orqaga</button>`
+      : `<h2 class="s">Nima bo'ldi?</h2>
+         ${O.map(([v,i,l])=>`<button class="sosbtn" data-act="sos" data-v="${v}" aria-pressed="${S.sos===v}"><span style="font-size:22px">${i}</span>${l}</button>`).join("")}
+         <label for="loc" style="display:flex;gap:8px"><input type="checkbox" id="loc" checked> Joylashuvimni yuborish</label>
+         <button class="btn" style="background:var(--danger);color:#fff" data-act="sossend" ${S.sos?"":"disabled"}>Signal yuborish</button>`}
+    <div class="list"><div><span style="flex:1">Favqulodda xizmat</span><b>112</b></div><div><span style="flex:1">Ishonch telefoni</span><b>1146</b></div></div>
+    <p class="muted sm" style="margin:0">Bu signalni oila ko'rmaydi.</p>
+  </div>`);},
+
+profile(){ return phone(`${hdr("Profil")}
+  <div class="content">
+    <div style="display:flex;gap:12px;align-items:center"><div class="ph" style="width:64px;height:64px;border-radius:50%;padding:0"></div><div><b style="font-family:var(--f-display);font-size:18px">Aziz K.</b><br><span class="muted sm">19 yosh · Xorazmdan · OTM, 2-kurs</span></div></div>
+    <div class="list"><div>Profilni tahrirlash</div><div>Rasm va video</div><div>Hujjatlar <span class="st-ok" style="margin-left:auto">✓</span></div><div>Til: O'zbek (lotin)</div><div>Telegram ulangan <span class="st-ok" style="margin-left:auto">✓</span></div><div>Maxfiylik</div><div class="st-bad">Akkauntni o'chirish</div></div>
+  </div>${tabs("profile")}`);},
+
+members(){ return phone(`${hdr("Oilamiz",{nobell:1})}
+  <div class="content">
+    <div class="banner" style="background:var(--ok-soft)"><span>✓</span><div><b>Tasdiqlangan</b><br><span class="sm">Faol: 🏠 Yashash 1/2 · 🎓 Mentorlik va yordam 0/5</span></div></div>
+    <p class="sec-title">A'zolar</p>
+    <div class="list">
+      <div>👨 <span style="flex:1"><b>Rustam</b>, 48 · ota<br><span class="sm st-ok">✓ login · ✓ hujjatlar</span></span></div>
+      <div>👩 <span style="flex:1"><b>Dilnoza</b>, 45 · ona<br><span class="sm"><span class="st-ok">✓ login</span> · <span class="st-warn">! sudlanmaganlik ma'lumotnomasi yo'q</span></span></span><button class="chip">Yuklash</button></div>
+      <div>👧 <span style="flex:1"><b>Madina</b>, 12 · qiz<br><span class="sm muted">Voyaga yetmagan — login kerak emas</span></span></div>
+    </div>
+    <button class="btn sec">+ A'zo qo'shish</button>
+    <div class="list"><div><span style="flex:1">Uy-sharoit</span><span class="muted">›</span></div><div><span style="flex:1">Taklif va uy qoidalari</span><span class="muted">›</span></div><div><span style="flex:1">Media: 5 ta rasm, 1 ta video</span><span class="muted">›</span></div></div>
+  </div>
+  <div class="tabs">${[["🏠","Bosh"],["🔍","Qidiruv"],["💛","Qiziqish"],["💬","Chat"],["👨‍👩‍👧","Oila"]].map(([i,l],k)=>`<button ${k===4?'aria-current="true"':""}><span class="i">${i}</span>${l}</button>`).join("")}</div>`);},
+
+admin(){ return desk("admin",`
+  <div class="atop"><h3>Dashboard</h3><span class="muted sm">Malika S. · Toshkent ▾</span></div>
+  <div class="abody">
+    <div class="tiles">
+      <div class="tile hot"><span class="sm">🚨 SOS</span><span class="v">1</span><span class="sm">04:12 dan beri ochiq</span></div>
+      <div class="tile"><span class="sm muted">Verifikatsiya</span><span class="v">12</span><span class="sm muted">eng eskisi 2 kun</span></div>
+      <div class="tile"><span class="sm muted">Moderatsiya</span><span class="v">31</span><span class="sm muted">rasm, video, xabar</span></div>
+      <div class="tile"><span class="sm muted">Xavf signallari</span><span class="v">4</span><span class="sm muted">2 tasi yangi</span></div>
+    </div>
+    <div><p class="sec-title" style="margin-bottom:6px">Bugungi uchrashuvlar</p>
+    <div class="tw"><table><thead><tr><th>Vaqt</th><th>Juftlik</th><th>Joy</th><th>Holat</th></tr></thead><tbody>
+      <tr><td>11:00</td><td>Aziz K. ↔ Karimovlar</td><td>Fond ofisi</td><td><span class="chip">3-uchrashuv</span></td></tr>
+      <tr><td>15:00</td><td>Laylo M. ↔ Saidovlar</td><td>Alisher Navoiy kutubxonasi</td><td><span class="chip">1-uchrashuv</span></td></tr>
+    </tbody></table></div></div>
+    <div><p class="sec-title" style="margin-bottom:8px">Voronka · 30 kun · namuna raqamlar</p>
+    <div class="funnel">
+      ${[["Ro'yxat",1240],["Tasdiqlangan",610],["Juftlik",180],["Faol",64]].map(([l,v])=>`<div><span>${l}</span><b>${v}</b><span class="bar" style="width:${v/1240*100}%"></span></div>`).join("")}
+    </div></div>
+  </div>`);},
+
+verify(){
+  const Q=[["Karimovlar oilasi","2 kun"],["Aziz K.","1 kun"],["Saidovlar oilasi","1 kun"],["Laylo M.","3 soat"]];
+  return desk("verify",`
+  <div class="atop"><h3>Verifikatsiya · 12 ta navbatda</h3><select class="inp" style="width:auto" aria-label="Filtr"><option>Oilalar</option><option>Yoshlar</option></select></div>
+  <div class="split">
+    <div class="q">${Q.map(([n,a],i)=>`<button data-act="asel" data-v="${i}" aria-current="${S.adminSel===i}"><span>${n}</span><span class="muted sm">${a}</span></button>`).join("")}</div>
+    <div class="abody">
+      <h2 class="s">${Q[S.adminSel][0]} · Toshkent</h2>
+      <div class="doc">
+        <b>Rustam K. (ota)</b><span></span>
+        <span class="muted">Pasport</span><div class="ph docph">${S.reason?"pasport skani":"🔒 sabab tanlang"}</div>
+        <span class="muted">Sudlanmaganlik</span><div class="ph docph">${S.reason?"ma'lumotnoma":"🔒"}</div>
+        <span></span><span class="st-ok sm">✓ Qora ro'yxatda yo'q</span>
+        <b>Dilnoza K. (ona)</b><span></span>
+        <span class="muted">Pasport</span><div class="ph docph">${S.reason?"pasport skani":"🔒"}</div>
+        <span class="muted">Sudlanmaganlik</span><span class="st-warn">! Yuklanmagan</span>
+      </div>
+      <div class="field"><label for="why">Hujjatni ochish sababi (auditga yoziladi)</label>
+        <select class="inp" id="why" data-act="reason"><option value="">— tanlang —</option><option ${S.reason?"selected":""}>Verifikatsiya</option><option>Shikoyat bo'yicha tekshiruv</option></select></div>
+      <div class="field"><label for="note">Izoh</label><input class="inp" id="note" placeholder="Masalan: ona uchun ma'lumotnoma kerak"></div>
+      <div class="row"><button class="btn danger">Rad etish</button><button class="btn sec">Hujjat so'rash</button><button class="btn" disabled title="Barcha hujjatlar yuklanmagan">✓ Tasdiqlash</button></div>
+    </div>
+  </div>`);},
+};
+
+function desk(active, inner){
+  const A=[["admin","Dashboard",""],["verify","Verifikatsiya","12"],["","Moderatsiya","31"],["","Shikoyatlar","3"],["","SOS","1",1],["","Xavf signallari","4"],["","Foydalanuvchilar",""],["","Juftliklar",""],["","Uchrashuvlar",""],["","Kelishuvlar",""],["","Check-in",""],["","Sozlamalar",""],["","Audit",""],["","Analitika",""]];
+  return `<div class="desk"><div class="aside"><div class="brand">Mehr Admin</div>
+    ${A.map(([id,l,c,h])=>`<button ${id?`data-go="${id}"`:""} aria-current="${id===active}"><span>${l}</span><span class="cnt ${h?"hot":""}">${c}</span></button>`).join("")}
+  </div><div class="amain">${inner}</div></div>`;
+}
+
+const EXTRA = {search:{t:"Qidiruv",d:"Filtrlar va lenta. Xavfsizlik filtrlari doim ishlaydi."},chatlist:{t:"Chatlar ro'yxati",d:"Faqat juftliklar bilan chat."},profile:{t:"Profil",d:"Yoshning o'z profili va sozlamalari."}};
+
+function render(){
+  const meta = SCREENS.find(s=>s.id===S.screen) || EXTRA[S.screen];
+  document.getElementById("cap-t").textContent = (meta.n?meta.n+". ":"")+meta.t;
+  document.getElementById("cap-d").textContent = meta.d;
+  document.getElementById("frame").innerHTML = R[S.screen]();
+  document.querySelectorAll("#groups button").forEach(b=>b.setAttribute("aria-current", b.dataset.go===S.screen));
+  const sel=document.getElementById("navsel"); if(SCREENS.some(s=>s.id===S.screen)) sel.value=S.screen;
+  const cb=document.getElementById("chatbox"); if(cb) cb.parentElement.scrollTop=1e6;
+  const f=document.getElementById("composer");
+  if(f) f.addEventListener("submit",e=>{e.preventDefault();const i=document.getElementById("msg");const t=i.value.trim();if(!t)return;
+    const bad=/(\+?998[\s-]?\d{2}|\b\d{2}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}\b|@[A-Za-z0-9_]{3,}|t\.me|https?:\/\/|www\.)/i.test(t);
+    S.msgs.push(bad?{k:"held",t}:{k:"out",t,tm:new Date().toTimeString().slice(0,5)});render();setTimeout(()=>document.getElementById("msg")?.focus(),0);});
+  try{localStorage.setItem("mehr-screen",S.screen)}catch(e){}
+}
+function go(id){ S.screen=id; S.toast=null; render(); }
+
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]");
+  if(a){
+    const v=a.dataset.v;
+    switch(a.dataset.act){
+      case "otp": S.otp=true; render(); return;
+      case "role": S.role=v; render(); return;
+      case "gender": S.gender=v; render(); return;
+      case "tag": S.tags.has(v)?S.tags.delete(v):S.tags.add(v); render(); return;
+      case "skill": S.skills.has(v)?S.skills.delete(v):S.skills.add(v); render(); return;
+      case "interest": if(S.used<S.daily){S.used++;S.sent.add("karimov");} render(); return;
+      case "accept": S.incoming=S.incoming.filter(f=>f.id!==v); S.toast="Juftlik yaratildi — endi chat ochiq."; render(); return;
+      case "decline": S.incoming=S.incoming.filter(f=>f.id!==v); S.toast=null; render(); return;
+      case "chk": S.check[v]=a.checked; render(); return;
+      case "trial": S.trial=v; render(); return;
+      case "agree": S.agree=a.checked; render(); return;
+      case "sign": S.signed=true; render(); return;
+      case "sos": S.sos=v; render(); return;
+      case "sossend": S.sosSent=true; render(); return;
+      case "sosreset": S.sosSent=false; S.sos=null; render(); return;
+      case "asel": S.adminSel=+v; S.reason=false; render(); return;
+    }
+  }
+  const g=e.target.closest("[data-go]");
+  if(g && !g.disabled) go(g.dataset.go);
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="why"){S.reason=!!e.target.value;render();}
+  if(e.target.id==="minor"){S.minor=e.target.checked;render();}
+  if(e.target.id==="navsel"){go(e.target.value);}
+});
+
+// Navigator
+(function(){
+  const groups={}; SCREENS.forEach(s=>(groups[s.g]=groups[s.g]||[]).push(s));
+  document.getElementById("groups").innerHTML = Object.entries(groups).map(([g,list])=>`<div><h4>${g}</h4><ul>${list.map(s=>`<li><button data-go="${s.id}"><span class="n">${s.n}</span>${s.t}</button></li>`).join("")}</ul></div>`).join("");
+  document.getElementById("navsel").innerHTML = SCREENS.map(s=>`<option value="${s.id}">${s.n}. ${s.t}</option>`).join("");
+  try{const saved=localStorage.getItem("mehr-screen"); if(saved && R[saved]) S.screen=saved;}catch(e){}
+  render();
+})();
+</script>
+
+</body>
+</html>
