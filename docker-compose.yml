@@ -1,4 +1,4 @@
-# Lokal ishlab chiqish uchun infratuzilma: Postgres (PostGIS), Redis, MinIO
+# Lokal ishlab chiqish uchun infratuzilma: Postgres (PostGIS), Redis, SeaweedFS (S3)
 name: mehr
 
 services:
@@ -20,29 +20,31 @@ services:
     ports: ["6379:6379"]
     volumes: [redisdata:/data]
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: mehr
-      MINIO_ROOT_PASSWORD: mehr_dev_password
-    ports: ["9000:9000", "9001:9001"]
-    volumes: [miniodata:/data]
+  # S3-mos fayl ombori (MinIO o'rniga — MinIO image'lari endi tarqatilmaydi)
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+    ports: ["8333:8333", "9333:9333"]
+    volumes:
+      - s3data:/data
+      - ./infra/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
 
-  # Bucketlarni yaratadi: media (ochiq emas), documents (alohida, shifrlangan hujjatlar)
-  minio-init:
-    image: minio/mc:latest
-    depends_on: [minio]
+  # Bucketlarni yaratadi: media va documents (alohida, shifrlangan hujjatlar)
+  s3-init:
+    image: amazon/aws-cli:latest
+    depends_on: [seaweedfs]
+    environment:
+      AWS_ACCESS_KEY_ID: mehr
+      AWS_SECRET_ACCESS_KEY: mehr_dev_password
+      AWS_DEFAULT_REGION: us-east-1
     entrypoint: >
       /bin/sh -c "
-      sleep 3;
-      mc alias set local http://minio:9000 mehr mehr_dev_password;
-      mc mb -p local/mehr-media local/mehr-documents;
-      mc anonymous set none local/mehr-media;
-      mc anonymous set none local/mehr-documents;
-      exit 0;"
+      for i in $$(seq 1 30); do aws --endpoint-url http://seaweedfs:8333 s3 ls >/dev/null 2>&1 && break; sleep 1; done;
+      aws --endpoint-url http://seaweedfs:8333 s3 mb s3://mehr-media || true;
+      aws --endpoint-url http://seaweedfs:8333 s3 mb s3://mehr-documents || true;
+      aws --endpoint-url http://seaweedfs:8333 s3 ls"
 
 volumes:
   pgdata:
   redisdata:
-  miniodata:
+  s3data:

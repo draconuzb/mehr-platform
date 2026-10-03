@@ -685,7 +685,7 @@ Bu bo'lim **ixtiyoriy emas**. Platformaning asosiy tahdidi — grooming va odam 
 | Backend | NestJS (TypeScript) — REST + WebSocket |
 | DB | PostgreSQL (+ PostGIS — shahar/tuman bo'yicha masofa uchun) |
 | Kesh / navbat | Redis + BullMQ (video, moderatsiya, bildirishnomalar, check-in) |
-| Fayllar | MinIO (S3-mos), O'zbekistondagi serverda; hujjatlar alohida shifrlangan bucketda |
+| Fayllar | S3-mos ombor — SeaweedFS (MinIO image'lari endi tarqatilmaydi), O'zbekistondagi serverda; hujjatlar alohida shifrlangan bucketda |
 | Video | FFmpeg qayta kodlash → HLS |
 | Chat | Socket.IO; video qo'ng'iroq — WebRTC + o'z TURN serverimiz (coturn) |
 | Ovoz → matn | O'zbek tili uchun STT (Whisper / mahalliy yechim — tanlanadi) |
@@ -706,7 +706,7 @@ Format: 2 haftalik sprintlar. Ishchi kuchi: 1 dasturchi + Claude. Har bir sprint
 
 ### Bosqich 0 — Poydevor (1–2-hafta)
 - Monorepo (pnpm + Turborepo): `apps/web` (Next.js PWA), `apps/admin` (Next.js), `apps/api` (NestJS), `apps/bot`, `packages/shared` (tiplar, validatsiya — zod)
-- Docker Compose: Postgres, Redis, MinIO
+- Docker Compose: Postgres, Redis, SeaweedFS (S3)
 - CI (lint, test, build), staging server, Sentry
 - i18n karkasi: 4 til, lotin↔kirill transliteratsiya
 - Prisma sxemasi — 5E bo'limidagi jadvallar (14–17 maydonlari ham boshidan)

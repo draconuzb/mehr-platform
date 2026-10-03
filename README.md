@@ -34,7 +34,7 @@ Talablar: Node 22 (`nvm use`), pnpm 9 (`corepack enable`), Docker.
 ```bash
 pnpm install
 cp .env.example .env            # birinchi marta
-pnpm infra:up                   # Postgres + Redis + MinIO
+pnpm infra:up                   # Postgres + Redis + SeaweedFS (S3)
 pnpm db:migrate                 # migratsiyalar (birinchi marta: nom so'raydi, masalan "init")
 pnpm --filter @mehr/db seed     # hududlar, teglar, sozlamalar
 pnpm dev                        # hamma ilovalar
@@ -43,7 +43,7 @@ pnpm dev                        # hamma ilovalar
 - API health: http://localhost:4000/v1/health
 - Web: http://localhost:3000 (`?lang=uz-Cyrl`, `ru`, `kaa`)
 - Admin: http://localhost:3001
-- MinIO konsoli: http://localhost:9001
+- S3 (SeaweedFS): http://localhost:8333, master UI: http://localhost:9333
 
 Biznes-qoidalar (1 yosh = 1 faol oila, oila limitlari, append-only audit) `packages/db/prisma/sql/constraints.sql` da — birinchi migratsiyadan keyin alohida migratsiya sifatida qo'shiladi (fayl boshidagi ko'rsatmaga qarang).
 

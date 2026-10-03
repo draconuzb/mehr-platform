@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "mehr-dev",
+      "credentials": [{ "accessKey": "mehr", "secretKey": "mehr_dev_password" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
